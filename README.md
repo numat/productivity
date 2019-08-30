@@ -1,8 +1,6 @@
 Productivity
 ============
 
-##### August 2019: This driver is in very early stages of development.
-
 Python ≥3.5 driver and command-line tool for [AutomationDirect Productivity Series PLCs](https://www.automationdirect.com/adc/overview/catalog/programmable_controllers/productivity_series_controllers).
 
 <p align="center">
@@ -22,16 +20,13 @@ Usage
 ### PLC Configuration
 
 This driver uses Modbus TCP/IP for communication. Unlike the ClickPLC, modbus
-addresses need to be manually configured in the Productivity PLC firmware.
+addresses need to be manually configured in the Productivity PLC firmware (see
+[manual](https://cdn.automationdirect.com/static/manuals/p2userm/p2userm.pdf)).
 
-To do this, go to `Write Program → Tag Database`, scroll down to the values you
-care about, and double click the `Mod Start` cell of each value. This will assign
-Modbus addresses (e.g. `300001`) to the values.
-
-Then, go to `File → Export → Tags` to export a csv file. This will be used
-by this driver so you don't need to remember addresses.
-
-More can be found in [the manual](https://cdn.automationdirect.com/static/manuals/p2userm/p2userm.pdf).
+To use this driver, go to `Write Program → Tag Database`, scroll down to the values
+you care about, and double click the `Mod Start` cell of each value to assign an address.
+Then, go to `File → Export → Tags` to export a csv file. The file is used here so
+you don't need to remember the addresses.
 
 ### Command Line
 
