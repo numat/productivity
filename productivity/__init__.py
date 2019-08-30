@@ -16,11 +16,12 @@ def command_line():
     parser = argparse.ArgumentParser(description="Control a Productivity PLC "
                                      "from the command line.")
     parser.add_argument('address', help="The IP address of the PLC.")
+    parser.add_argument('tags', help="The PLC tag database file.")
     args = parser.parse_args()
 
     async def get():
-        async with ProductivityPLC(args.address) as plc:
-            d = await plc.get_inputs(list(range(100)))
+        async with ProductivityPLC(args.address, args.tags) as plc:
+            d = await plc.get()
             print(json.dumps(d, indent=4))
 
     loop = asyncio.get_event_loop()

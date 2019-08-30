@@ -22,26 +22,28 @@ Usage
 ### PLC Configuration
 
 This driver uses Modbus TCP/IP for communication. Unlike the ClickPLC, modbus
-addresses need to be manually configured in the PLC firmware.
+addresses need to be manually configured in the Productivity PLC firmware.
 
 To do this, go to `Write Program → Tag Database`, scroll down to the values you
-care about, and click the `Mod Start` cell of each value. This will assign
+care about, and double click the `Mod Start` cell of each value. This will assign
 Modbus addresses (e.g. `300001`) to the values.
+
+Then, go to `File → Export → Tags` to export a csv file. This will be used
+by this driver so you don't need to remember addresses.
 
 More can be found in [the manual](https://cdn.automationdirect.com/static/manuals/p2userm/p2userm.pdf).
 
 ### Command Line
 
 ```
-$ productivity the-plc-ip-address
+$ productivity the-plc-ip-address path/to/tags.csv
 ```
 
-This will print a sample of Modbus registers which can be piped as needed.
-However, you'll likely want the python functionality below.
+See `productivity --help` for more.
 
 ### Python
 
-This uses Python ≥3.5's async/await syntax to asynchronously communicate with
+This driver uses Python ≥3.5's async/await syntax to asynchronously communicate with
 a ClickPLC. For example:
 
 ```python
@@ -49,11 +51,8 @@ import asyncio
 from productivity import ProductivityPLC
 
 async def get():
-    async with ProductivityPLC('the-plc-ip-address') as plc:
-        print(await plc.get_inputs())
+    async with ProductivityPLC('the-plc-ip-address', 'path/to/tags.csv') as plc:
+        print(await plc.get())
 
 asyncio.run(get())
 ```
-
-Currently, only reading float32 input registers is supported. I plan on building
-this out as more functionality is required.
