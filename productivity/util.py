@@ -33,7 +33,7 @@ class AsyncioModbusClient(object):
 
     async def __aexit__(self, *args):
         """Provide exit to the context manager."""
-        self._close()
+        self.close()
 
     async def _connect(self):
         """Start asynchronous reconnect loop."""
@@ -128,7 +128,7 @@ class AsyncioModbusClient(object):
         finally:
             self.waiting = False
 
-    def _close(self):
+    def close(self):
         """Close the TCP connection."""
         self.client.stop()
         self.open = False
