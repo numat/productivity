@@ -12,10 +12,13 @@ from pymodbus.payload import BinaryPayloadDecoder
 from productivity.util import AsyncioModbusClient
 
 data_types = {
-    'AIF32': 'float',  # Analog Input Float 32
+    'AIF32': 'float',  # Analog Input Float 32-bit
+    'F32': 'float',    # Float 32-bit
+    'AIS32': 'int32',  # Analog Input (S)integer 32-bit
     'DI': 'bool',      # Discrete Input
     'SBR': 'bool',     # System Boolean Read-only
     'MST': 'bool',     # Module Status biT
+    'STR': 'str',      # STRing
     'SSTR': 'str',     # System STRing
     'SWR': 'int',      # System (W)integer Read-only
     'SWRW': 'int'      # System (W)integer Read-Write
@@ -51,10 +54,10 @@ class ProductivityPLC(AsyncioModbusClient):
         """
         result = {}
         if 'coils' in self.addresses:
-            result.update(await self._handle_coils())
+            result.update(await self._read_coils())
         for type in ['input', 'holding']:
             if type in self.addresses:
-                result.update(await self._handle_registers(type))
+                result.update(await self._read_registers(type))
         return result
 
     def get_tags(self):
@@ -83,7 +86,7 @@ class ProductivityPLC(AsyncioModbusClient):
             current += 1
         return result
 
-    async def _handle_registers(self, type):
+    async def _read_registers(self, type):
         """Handle reading input or holding registers from the PLC."""
         r = await self.read_registers(**self.addresses[type], type=type)
         decoder = BinaryPayloadDecoder.fromRegisters(r,
@@ -101,11 +104,15 @@ class ProductivityPLC(AsyncioModbusClient):
                     result[tag] = decoder.decode_32bit_float()
                     current += 2
                 elif data_type == 'str':
-                    result[tag] = decoder.decode_string(50)
-                    current += 50
+                    chars = self.tags[tag]['length']
+                    result[tag] = decoder.decode_string(chars).decode('ascii')
+                    current += (chars + 1) // 2
                 elif data_type == 'int':
                     result[tag] = decoder.decode_16bit_int()
                     current += 1
+                elif data_type == 'int32':
+                    result[tag] = decoder.decode_32bit_int()
+                    current += 2
                 else:
                     raise ValueError("Missing data type.")
             else:
@@ -132,6 +139,7 @@ class ProductivityPLC(AsyncioModbusClient):
                 },
                 'id': row['System ID'],
                 'comment': row['Comment'],
+                'length': int(row['Number of Characters'] or 0),
                 'type': data_types.get(
                     row.get('Data Type', row['System ID'].split('-')[0])
                 )
@@ -142,6 +150,8 @@ class ProductivityPLC(AsyncioModbusClient):
         for data in parsed.values():
             if not data['comment']:
                 del data['comment']
+            if not data['length']:
+                del data['length']
             if not data['type']:
                 raise TypeError(
                     f"{data['id']} is an unsupported data type. Open a "

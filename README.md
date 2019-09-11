@@ -1,6 +1,8 @@
 Productivity
 ============
 
+##### NOTE: This is in very early stages of development.
+
 Python ≥3.5 driver and command-line tool for [AutomationDirect Productivity Series PLCs](https://www.automationdirect.com/adc/overview/catalog/programmable_controllers/productivity_series_controllers).
 
 <p align="center">
