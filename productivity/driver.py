@@ -5,9 +5,10 @@ Distributed under the GNU General Public License v2
 Copyright (C) 2019 NuMat Technologies
 """
 import csv
+import pydoc
 
 from pymodbus.constants import Endian
-from pymodbus.payload import BinaryPayloadDecoder
+from pymodbus.payload import BinaryPayloadBuilder, BinaryPayloadDecoder
 
 from productivity.util import AsyncioModbusClient
 
@@ -72,7 +73,73 @@ class ProductivityPLC(AsyncioModbusClient):
         """
         return self.tags
 
-    async def _handle_coils(self):
+    async def set(self, *args, **kwargs):
+        """Set tag names to values.
+
+        This function expects keyword arguments. See the below examples.
+
+        >>> set(av1=False)
+        >>> set(target=0, setpoint=1.1)
+        >>> set(**{'av1': False, 'av2': False})
+        """
+        if args:
+            if len(args) == 1 and isinstance(args[0], dict):
+                raise ValueError("Remember to unpack! `plc.set(**params)`.")
+            else:
+                raise TypeError("Unexpected input. See docstring.")
+        if not kwargs:
+            raise TypeError("Unexpected input. See docstring.")
+        to_write = {key.lower(): value for key, value in kwargs.items()}
+        unsupported = set(to_write) - set(self.tags)
+        if unsupported:
+            raise ValueError(f"Missing tags: {', '.join(unsupported)}")
+        for key, value in to_write.items():
+            data_type = self.tags[key]['type']
+            if isinstance(value, int) and data_type == 'float':
+                to_write[key] = float(value)
+            if not isinstance(value, pydoc.locate(data_type)):
+                raise ValueError(f"Expected {key} to be a {data_type}.")
+        addresses = [(tag, self.tags[tag]['address']['start']) for tag in to_write]
+        sorted(addresses, key=lambda a: a[1])
+        if addresses[0][1] < 100000:
+            raise ValueError("Unexpected register.")
+        while addresses[0][1] < 165536:
+            coils = 1
+            start = addresses[0][1]
+            while addresses[coils][1] == start + coils:
+                coils += 1
+            values = [to_write[address[0]] for address in addresses[:coils]]
+            await self.write_coils(start, values)
+            addresses = addresses[coils:]
+        if addresses[0][1] < 400000:
+            raise ValueError("Cannot write to input registers.")
+        while addresses[0][1] < 465536:
+            index, registers = 0, 0
+            start = addresses[0][1]
+            builder = BinaryPayloadBuilder(byteorder=Endian.Big,
+                                           wordorder=Endian.Little)
+            while addresses[index][1] == start + registers:
+                index += 1
+                key = addresses[index[0]]
+                value = to_write[key]
+                data_type = self.tags[key]['type']
+                if data_type == 'float':
+                    builder.add_32bit_float(value)
+                    registers += 2
+                elif data_type == 'str':
+                    builder.add_string(value.ljust(50))
+                    registers += 50
+                elif data_type == 'int':
+                    builder.add_16bit_int(value)
+                    registers += 1
+                else:
+                    raise ValueError("Missing data type.")
+            await self.write_registers(start, builder.build())
+            addresses = addresses[index:]
+        if addresses:
+            raise ValueError("Not all registers spent.")
+
+    async def _read_coils(self):
         """Handle reading coils from the PLC."""
         result = {}
         coils = await self.read_coils(**self.addresses['coils'])
