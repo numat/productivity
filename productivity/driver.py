@@ -66,7 +66,8 @@ class ProductivityPLC(AsyncioModbusClient):
         if 'discrete_output' in self.addresses:
             result.update(await self._read_discrete(self.addresses['discrete_output']))
         if 'discrete_input' in self.addresses:
-            result.update(await self._read_discrete(self.addresses['discrete_input'], output=False))
+            result.update(await self._read_discrete(self.addresses['discrete_input'],
+                                                    output=False))
 
         for type in ['input', 'holding']:
             if type in self.addresses:
@@ -119,7 +120,8 @@ class ProductivityPLC(AsyncioModbusClient):
         responses = []
         while addresses and addresses[0][1] < 65536:
             address = addresses.pop(0)
-            responses.append(str(await self.write_coil(address[1] - 1, to_write[address[0]])))
+            responses.append(str(await self.write_coil(address[1] - 1,
+                                                       to_write[address[0]])))
         while addresses and 400000 <= addresses[0][1] < 465536:
             address = addresses.pop(0)
             builder = BinaryPayloadBuilder(byteorder=Endian.Big,
@@ -132,7 +134,8 @@ class ProductivityPLC(AsyncioModbusClient):
             elif data_type == 'str':
                 chars = self.tags[key]['length']
                 if len(value) > chars:
-                    raise ValueError(f'{value} is too long for {key}. Max: {chars} chars')
+                    raise ValueError(f'{value} is too long for {key}. '
+                                     f'Max: {chars} chars')
                 builder.add_string(value.ljust(chars))
             elif data_type == 'int':
                 builder.add_16bit_int(value)
@@ -140,7 +143,9 @@ class ProductivityPLC(AsyncioModbusClient):
                 builder.add_32bit_int(value)
             else:
                 raise ValueError("Missing data type.")
-            resp = await self.write_registers(address[1] - 400001, builder.build(), skip_encode=True)
+            resp = await self.write_registers(address[1] - 400001,
+                                              builder.build(),
+                                              skip_encode=True)
             responses.append(str(resp[0]))
         if addresses:
             raise ValueError("Not all registers spent.")
@@ -194,7 +199,8 @@ class ProductivityPLC(AsyncioModbusClient):
                 else:
                     raise ValueError("Missing data type.")
             else:
-                # Empty modbus addresses or odd length strings could land you on a register that's not used
+                # Empty modbus addresses or odd length strings could land you on a
+                # register that's not used
                 decoder._pointer += 1
                 current += 1
         return result
@@ -261,13 +267,14 @@ class ProductivityPLC(AsyncioModbusClient):
             else:
                 continue
             if a_type in output:
-                output[a_type]['count'] = a - type_start[a_type] - output[a_type]['address']
+                output[a_type]['count'] = (a - type_start[a_type]
+                                           - output[a_type]['address'])
             else:
                 output[a_type] = {'address': a - type_start[a_type] - 1}
 
         for found_type in output:
             if output[found_type]['count'] > 2000:
-                raise ValueError(f"Only supporting an address span of 2000 {found_type}. "
-                                 "If you need more, open a github issue at "
+                raise ValueError(f"Only supporting an address span of 2000 {found_type}."
+                                 " If you need more, open a github issue at "
                                  "numat/productivity.")
         return output
