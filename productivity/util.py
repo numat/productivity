@@ -45,8 +45,12 @@ class AsyncioModbusClient(object):
         self.open = True
 
     async def read_coils(self, address, count):
-        """Read a modbus coil."""
+        """Read modbus output coils (0 address prefix)."""
         return await self._request('read_coils', address, count)
+
+    async def read_discrete_inputs(self, address, count):
+        """Read modbus discrete inputs (1 address prefix)."""
+        return await self._request('read_discrete_inputs', address, count)
 
     async def read_registers(self, address, count, type='holding'):
         """Read modbus registers.
@@ -68,15 +72,15 @@ class AsyncioModbusClient(object):
 
     async def write_coil(self, address, value):
         """Write modbus coils."""
-        await self._request('write_coil', address, value)
+        return await self._request('write_coil', address, value)
 
     async def write_coils(self, address, values):
         """Write modbus coils."""
-        await self._request('write_coils', address, values)
+        return await self._request('write_coils', address, values)
 
     async def write_register(self, address, value, skip_encode=False):
         """Write a modbus register."""
-        await self._request('write_registers', address, value, skip_encode=skip_encode)
+        return await self._request('write_registers', address, value, skip_encode=skip_encode)
 
     async def write_registers(self, address, values, skip_encode=False):
         """Write modbus registers.
@@ -85,12 +89,14 @@ class AsyncioModbusClient(object):
         (ie. 125 registers, 62 DF addresses), which this function manages by
         chunking larger requests.
         """
+        responses = []
         while len(values) > 62:
-            await self._request('write_registers',
-                                address, values, skip_encode=skip_encode)
+            responses.append(await self._request(
+                'write_registers', address, values, skip_encode=skip_encode))
             address, values = address + 124, values[62:]
-        await self._request('write_registers',
-                            address, values, skip_encode=skip_encode)
+        responses.append(await self._request(
+            'write_registers', address, values, skip_encode=skip_encode))
+        return responses
 
     async def _request(self, method, *args, **kwargs):
         """Send a request to the device and awaits a response.

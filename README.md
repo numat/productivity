@@ -53,3 +53,12 @@ async def get():
 
 asyncio.run(get())
 ```
+
+It's possible to set coils and registers on the PLC as well using keyword arguments
+```python
+async def set(**kwargs):
+    async with ProductivityPLC('the-plc-ip-address', 'path/to/tags.csv') as plc:
+        print(await plc.set(**kwargs))
+
+asyncio.run(set(target=0, setpoint=1.1))
+```
