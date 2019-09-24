@@ -16,13 +16,22 @@ data_types = {
     'AIF32': 'float',  # Analog Input Float 32-bit
     'F32': 'float',    # Float 32-bit
     'AIS32': 'int32',  # Analog Input (S)integer 32-bit
+    'S32': 'int32',    # (S)integer 32-bit'
+    'C': 'bool',       # (C) Boolean,
     'DI': 'bool',      # Discrete Input
+    'DO': 'bool',      # Discrete Output
     'SBR': 'bool',     # System Boolean Read-only
     'MST': 'bool',     # Module Status biT
     'STR': 'str',      # STRing
     'SSTR': 'str',     # System STRing
     'SWR': 'int',      # System (W)integer Read-only
     'SWRW': 'int'      # System (W)integer Read-Write
+}
+type_start = {
+    'discrete_output': 0,
+    'discrete_input': 100000,
+    'input': 300000,
+    'holding': 400000,
 }
 
 
@@ -54,8 +63,11 @@ class ProductivityPLC(AsyncioModbusClient):
 
         """
         result = {}
-        if 'coils' in self.addresses:
-            result.update(await self._read_coils())
+        if 'discrete_output' in self.addresses:
+            result.update(await self._read_discrete(self.addresses['discrete_output']))
+        if 'discrete_input' in self.addresses:
+            result.update(await self._read_discrete(self.addresses['discrete_input'], output=False))
+
         for type in ['input', 'holding']:
             if type in self.addresses:
                 result.update(await self._read_registers(type))
@@ -100,52 +112,52 @@ class ProductivityPLC(AsyncioModbusClient):
             if not isinstance(value, pydoc.locate(data_type)):
                 raise ValueError(f"Expected {key} to be a {data_type}.")
         addresses = [(tag, self.tags[tag]['address']['start']) for tag in to_write]
-        sorted(addresses, key=lambda a: a[1])
-        if addresses[0][1] < 100000:
-            raise ValueError("Unexpected register.")
-        while addresses[0][1] < 165536:
-            coils = 1
-            start = addresses[0][1]
-            while addresses[coils][1] == start + coils:
-                coils += 1
-            values = [to_write[address[0]] for address in addresses[:coils]]
-            await self.write_coils(start, values)
-            addresses = addresses[coils:]
-        if addresses[0][1] < 400000:
+        if any([100000 <= x[1] < 400000 for x in addresses]):
             raise ValueError("Cannot write to input registers.")
-        while addresses[0][1] < 465536:
-            index, registers = 0, 0
-            start = addresses[0][1]
+        addresses.sort(key=lambda a: a[1])
+
+        responses = []
+        while addresses and addresses[0][1] < 65536:
+            address = addresses.pop(0)
+            responses.append(str(await self.write_coil(address[1] - 1, to_write[address[0]])))
+        while addresses and 400000 <= addresses[0][1] < 465536:
+            address = addresses.pop(0)
             builder = BinaryPayloadBuilder(byteorder=Endian.Big,
                                            wordorder=Endian.Little)
-            while addresses[index][1] == start + registers:
-                index += 1
-                key = addresses[index[0]]
-                value = to_write[key]
-                data_type = self.tags[key]['type']
-                if data_type == 'float':
-                    builder.add_32bit_float(value)
-                    registers += 2
-                elif data_type == 'str':
-                    builder.add_string(value.ljust(50))
-                    registers += 50
-                elif data_type == 'int':
-                    builder.add_16bit_int(value)
-                    registers += 1
-                else:
-                    raise ValueError("Missing data type.")
-            await self.write_registers(start, builder.build())
-            addresses = addresses[index:]
+            key = address[0]
+            value = to_write[key]
+            data_type = self.tags[key]['type']
+            if data_type == 'float':
+                builder.add_32bit_float(value)
+            elif data_type == 'str':
+                chars = self.tags[key]['length']
+                if len(value) > chars:
+                    raise ValueError(f'{value} is too long for {key}. Max: {chars} chars')
+                builder.add_string(value.ljust(chars))
+            elif data_type == 'int':
+                builder.add_16bit_int(value)
+            elif data_type == 'int32':
+                builder.add_32bit_int(value)
+            else:
+                raise ValueError("Missing data type.")
+            resp = await self.write_registers(address[1] - 400001, builder.build(), skip_encode=True)
+            responses.append(str(resp[0]))
         if addresses:
             raise ValueError("Not all registers spent.")
+        return responses
 
-    async def _read_coils(self):
+    async def _read_discrete(self, addresses, output=True):
         """Handle reading coils from the PLC."""
         result = {}
-        coils = await self.read_coils(**self.addresses['coils'])
-        current = self.addresses['coils']['address'] + 100001
-        end = current + self.addresses['coils']['count']
-        for bit in coils.bits:
+        if output:
+            response = await self.read_coils(**addresses)
+            current = addresses['address'] + 1
+        else:
+            response = await self.read_discrete_inputs(**addresses)
+            current = addresses['address'] + 100001
+
+        end = current + addresses['count']
+        for bit in response.bits:
             if current > end:
                 break
             elif current in self.map:
@@ -153,15 +165,14 @@ class ProductivityPLC(AsyncioModbusClient):
             current += 1
         return result
 
-    async def _read_registers(self, type):
+    async def _read_registers(self, a_type):
         """Handle reading input or holding registers from the PLC."""
-        r = await self.read_registers(**self.addresses[type], type=type)
+        r = await self.read_registers(**self.addresses[a_type], type=a_type)
         decoder = BinaryPayloadDecoder.fromRegisters(r,
                                                      byteorder=Endian.Big,
                                                      wordorder=Endian.Little)
-        current = (self.addresses[type]['address'] +
-                   (300001 if type == 'input' else 400001))
-        end = current + self.addresses[type]['count']
+        current = self.addresses[a_type]['address'] + type_start[a_type] + 1
+        end = current + self.addresses[a_type]['count']
         result = {}
         while current < end:
             if current in self.map:
@@ -173,7 +184,7 @@ class ProductivityPLC(AsyncioModbusClient):
                 elif data_type == 'str':
                     chars = self.tags[tag]['length']
                     result[tag] = decoder.decode_string(chars).decode('ascii')
-                    current += (chars + 1) // 2
+                    current += chars // 2
                 elif data_type == 'int':
                     result[tag] = decoder.decode_16bit_int()
                     current += 1
@@ -183,6 +194,7 @@ class ProductivityPLC(AsyncioModbusClient):
                 else:
                     raise ValueError("Missing data type.")
             else:
+                # Empty modbus addresses or odd length strings could land you on a register that's not used
                 decoder._pointer += 1
                 current += 1
         return result
@@ -236,39 +248,26 @@ class ProductivityPLC(AsyncioModbusClient):
         """
         addresses = sorted([tag['address']['start'] for tag in tags.values()] +
                            [tag['address']['end'] for tag in tags.values()])
-        coils = [a for a in addresses if 100000 < a < 165536]
-        input_registers = [a for a in addresses if 300000 < a < 365536]
-        holding_registers = [a for a in addresses if 400000 < a < 465536]
-
         output = {}
-        if coils:
-            start_coil, end_coil = coils[0], coils[-1]
-            if end_coil - start_coil > 2000:
-                raise ValueError("Only supporting an address span of 2000 coils. "
+        for a in addresses:
+            if 0 < a < 65536:
+                a_type = 'discrete_output'
+            elif 100000 < a < 165536:
+                a_type = 'discrete_input'
+            elif 300000 < a < 365536:
+                a_type = 'input'
+            elif 400000 < a < 465536:
+                a_type = 'holding'
+            else:
+                continue
+            if a_type in output:
+                output[a_type]['count'] = a - type_start[a_type] - output[a_type]['address']
+            else:
+                output[a_type] = {'address': a - type_start[a_type] - 1}
+
+        for found_type in output:
+            if output[found_type]['count'] > 2000:
+                raise ValueError(f"Only supporting an address span of 2000 {found_type}. "
                                  "If you need more, open a github issue at "
                                  "numat/productivity.")
-            output['coils'] = {
-                'address': start_coil - 100001,
-                'count': end_coil - start_coil + 1
-            }
-        if input_registers:
-            start_register, end_register = input_registers[0], input_registers[-1]
-            if end_register - start_register > 2000:
-                raise ValueError("Only supporting an address span of 2000 registers. "
-                                 "If you need more, open a github issue at "
-                                 "numat/productivity.")
-            output['input'] = {
-                'address': start_register - 300001,
-                'count': end_register - start_register + 1
-            }
-        if holding_registers:
-            start_register, end_register = holding_registers[0], holding_registers[-1]
-            if end_register - start_register > 2000:
-                raise ValueError("Only supporting an address span of 2000 registers. "
-                                 "If you need more, open a github issue at "
-                                 "numat/productivity.")
-            output['holding'] = {
-                'address': start_register - 400001,
-                'count': end_register - start_register + 1
-            }
         return output
