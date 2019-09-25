@@ -189,7 +189,7 @@ class ProductivityPLC(AsyncioModbusClient):
                 elif data_type == 'str':
                     chars = self.tags[tag]['length']
                     result[tag] = decoder.decode_string(chars).decode('ascii')
-                    current += chars // 2
+                    current += max(chars // 2, 1)
                 elif data_type == 'int':
                     result[tag] = decoder.decode_16bit_int()
                     current += 1
