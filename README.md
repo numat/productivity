@@ -47,18 +47,19 @@ a ClickPLC. For example:
 import asyncio
 from productivity import ProductivityPLC
 
-async def get():
+async def run():
     async with ProductivityPLC('the-plc-ip-address', 'path/to/tags.csv') as plc:
         print(await plc.get())
 
-asyncio.run(get())
+asyncio.run(run())
 ```
 
-It's possible to set coils and registers on the PLC as well using keyword arguments
-```python
-async def set(**kwargs):
-    async with ProductivityPLC('the-plc-ip-address', 'path/to/tags.csv') as plc:
-        print(await plc.set(**kwargs))
+It is also possible to set tag values:
 
-asyncio.run(set(target=0, setpoint=1.1))
+```python
+async def run():
+    async with ProductivityPLC('the-plc-ip-address', 'path/to/tags.csv') as plc:
+        await plc.set(start=True, setpoint=1.1)
+
+asyncio.run(run())
 ```
