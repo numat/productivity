@@ -10,7 +10,7 @@ with open('README.md', 'r') as in_file:
 
 setup(
     name='productivity',
-    version='0.3.1',
+    version='0.3.2',
     description="Python driver for AutomationDirect Productivity Series PLCs.",
     long_description=long_description,
     long_description_content_type='text/markdown',

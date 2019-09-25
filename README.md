@@ -32,8 +32,16 @@ you don't need to remember the addresses.
 
 ### Command Line
 
+To print the tags and their values, simply call the library with the PLC IP address and 
+the tags file.
 ```
 $ productivity the-plc-ip-address path/to/tags.csv
+```
+
+Set values on the PLC from the command line using the --set flag with a string of valid
+YAML with the tags to update and desired values.
+```
+$ productivity the-plc-ip-address path/to/tags.csv -s "{int_test: 4, float_test: 4.45, string_test: foo}"
 ```
 
 See `productivity --help` for more.
