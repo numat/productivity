@@ -201,7 +201,7 @@ class ProductivityPLC(AsyncioModbusClient):
             else:
                 # Empty modbus addresses or odd length strings could land you on a
                 # register that's not used
-                decoder._pointer += 2
+                decoder._pointer += 1
                 current += 1
         return result
 

@@ -22,19 +22,15 @@ def command_line():
                         help="Pass a YAML string with parameters to be set.")
     args = parser.parse_args()
 
-    async def get():
+    async def run():
         async with ProductivityPLC(args.address, args.tags) as plc:
+            if args.set:
+                await plc.set(**args.set)
             d = await plc.get()
             print(json.dumps(d, indent=4))
 
-    async def set_vals(params):
-        async with ProductivityPLC(args.address, args.tags) as plc:
-            await plc.set(**params)
-
     loop = asyncio.get_event_loop()
-    if args.set:
-        loop.run_until_complete(set_vals(args.set))
-    loop.run_until_complete(get())
+    loop.run_until_complete(run())
     loop.close()
 
 

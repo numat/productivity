@@ -38,11 +38,11 @@ the tags file.
 $ productivity the-plc-ip-address path/to/tags.csv
 ```
 
-Set values on the PLC from the command line using the --set flag with a string of valid
-YAML with the tags to update and desired values.
+Use --set to set values on the PLC:
 ```
 $ productivity the-plc-ip-address path/to/tags.csv -s "{int_test: 4, float_test: 4.45, string_test: foo}"
 ```
+The --set parameter takes [YAML](https://learnxinyminutes.com/docs/yaml/), a simple data format that allows you to easily set multiple tags at once.
 
 See `productivity --help` for more.
 
@@ -62,7 +62,7 @@ async def get():
 asyncio.run(get())
 ```
 
-It's possible to set coils and registers on the PLC as well using keyword arguments
+It's possible to set values on the PLC as well using keyword arguments
 ```python
 async def set(**kwargs):
     async with ProductivityPLC('the-plc-ip-address', 'path/to/tags.csv') as plc:
