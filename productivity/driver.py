@@ -95,6 +95,21 @@ class ProductivityPLC(AsyncioModbusClient):
         >>> set(target=0, setpoint=1.1)
         >>> set(**{'av1': False, 'av2': False})
         """
+        discrete_to_write, registers_to_write = await self._parse_set_args(args, kwargs)
+
+        responses = []
+        if discrete_to_write:
+            resp = await self._write_discrete(discrete_to_write)
+            responses.append(str(resp))
+
+        if registers_to_write:
+            for key, value in registers_to_write.items():
+                resp = await self._write_register_value(key, value)
+                responses.append(str(resp[0]))
+        return responses
+
+    async def _parse_set_args(self, args, kwargs):
+        """Parse and validate input to the set function."""
         if args:
             if len(args) == 1 and isinstance(args[0], dict):
                 raise ValueError("Remember to unpack! `plc.set(**params)`.")
@@ -106,53 +121,66 @@ class ProductivityPLC(AsyncioModbusClient):
         unsupported = set(to_write) - set(self.tags)
         if unsupported:
             raise ValueError(f"Missing tags: {', '.join(unsupported)}")
+        discrete_to_write, registers_to_write = {}, {}
         for key, value in to_write.items():
+            start_address = self.tags[key]['address']['start']
             data_type = self.tags[key]['type']
             if isinstance(value, int) and data_type == 'float':
                 to_write[key] = float(value)
             if not isinstance(value, pydoc.locate(data_type)):
                 raise ValueError(f"Expected {key} to be a {data_type}.")
-        addresses = [(tag, self.tags[tag]['address']['start']) for tag in to_write]
-        if any([100000 <= x[1] < 400000 for x in addresses]):
-            raise ValueError("Cannot write to input registers.")
-        addresses.sort(key=lambda a: a[1])
-
-        responses = []
-        while addresses and addresses[0][1] < 65536:
-            address = addresses.pop(0)
-            responses.append(str(await self.write_coil(address[1] - 1,
-                                                       to_write[address[0]])))
-        while addresses and 400000 <= addresses[0][1] < 465536:
-            address = addresses.pop(0)
-            builder = BinaryPayloadBuilder(byteorder=Endian.Big,
-                                           wordorder=Endian.Little)
-            key = address[0]
-            value = to_write[key]
-            data_type = self.tags[key]['type']
-            if data_type == 'float':
-                builder.add_32bit_float(value)
-            elif data_type == 'str':
-                chars = self.tags[key]['length']
-                if len(value) > chars:
-                    raise ValueError(f'{value} is too long for {key}. '
-                                     f'Max: {chars} chars')
-                builder.add_string(value.ljust(chars))
-            elif data_type == 'int':
-                builder.add_16bit_int(value)
-            elif data_type == 'int32':
-                builder.add_32bit_int(value)
+            if 0 <= start_address < 65536:
+                discrete_to_write[key] = value
+            elif 400000 <= start_address < 465536:
+                registers_to_write[key] = value
             else:
-                raise ValueError("Missing data type.")
-            resp = await self.write_registers(address[1] - 400001,
-                                              builder.build(),
-                                              skip_encode=True)
-            responses.append(str(resp[0]))
-        if addresses:
-            raise ValueError("Not all registers spent.")
-        return responses
+                ValueError(f"{key} is not at a writeable address: {start_address}")
+        return discrete_to_write, registers_to_write
+
+    async def _write_register_value(self, key, value):
+        """Write a single value to the holding registers.
+
+        Currently registers are written one at a time to avoid issues with
+        discontinuous modbus addresses.
+        """
+        start_address = self.tags[key]['address']['start'] - 400001
+        builder = BinaryPayloadBuilder(byteorder=Endian.Big,
+                                       wordorder=Endian.Little)
+        data_type = self.tags[key]['type']
+        if data_type == 'float':
+            builder.add_32bit_float(value)
+        elif data_type == 'str':
+            chars = self.tags[key]['length']
+            if len(value) > chars:
+                raise ValueError(f'{value} is too long for {key}. '
+                                 f'Max: {chars} chars')
+            builder.add_string(value.ljust(chars))
+        elif data_type == 'int':
+            builder.add_16bit_int(value)
+        elif data_type == 'int32':
+            builder.add_32bit_int(value)
+        else:
+            raise ValueError("Missing data type.")
+        resp = await self.write_registers(start_address,
+                                          builder.build(),
+                                          skip_encode=True)
+        return resp
+
+    async def _write_discrete(self, discrete_to_write):
+        """Write a set of discrete values to the PLC.
+
+        To reduce the number of requests, the complete current state is
+        read then updated and written back.
+        """
+        current_state = await self._read_discrete(self.addresses['discrete_output'])
+        new_state = {**current_state, **discrete_to_write}
+        vals = [new_state[key] for key in self.tags if key in new_state]
+        assert len(vals) == len(new_state)
+        resp = await self.write_coils(self.addresses['discrete_output']['address'], vals)
+        return resp
 
     async def _read_discrete(self, addresses, output=True):
-        """Handle reading coils from the PLC."""
+        """Handle reading discrete values from the PLC."""
         result = {}
         if output:
             response = await self.read_coils(**addresses)
@@ -242,7 +270,9 @@ class ProductivityPLC(AsyncioModbusClient):
                     f"{data['id']} is an unsupported data type. Open a "
                     "github issue at numat/productivity to get it added."
                 )
-        return parsed
+        sorted_tags = {k: parsed[k] for k in
+                       sorted(parsed, key=lambda k: parsed[k]['address']['start'])}
+        return sorted_tags
 
     def _calculate_addresses(self, tags):
         """Determine the minimum number of requests to get all tags.
