@@ -6,9 +6,12 @@ Copyright (C) 2019 NuMat Technologies
 """
 import csv
 import pydoc
+from typing import Tuple, Union
 
 from pymodbus.constants import Endian
 from pymodbus.payload import BinaryPayloadBuilder, BinaryPayloadDecoder
+from pymodbus.bit_write_message import WriteMultipleCoilsResponse
+from pymodbus.register_write_message import WriteMultipleRegistersResponse
 
 from productivity.util import AsyncioModbusClient
 
@@ -55,7 +58,7 @@ class ProductivityPLC(AsyncioModbusClient):
         self.addresses = self._calculate_addresses(self.tags)
         self.map = {data['address']['start']: tag for tag, data in self.tags.items()}
 
-    async def get(self):
+    async def get(self) -> dict:
         """Get values of all tags with assigned modbus addresses.
 
         Returns:
@@ -74,7 +77,7 @@ class ProductivityPLC(AsyncioModbusClient):
                 result.update(await self._read_registers(type))
         return result
 
-    def get_tags(self):
+    def get_tags(self) -> dict:
         """Return all tags and associated configuration information.
 
         Use this data for debugging or to provide more detailed
@@ -86,7 +89,7 @@ class ProductivityPLC(AsyncioModbusClient):
         """
         return self.tags
 
-    async def set(self, *args, **kwargs):
+    async def set(self, *args, **kwargs) -> list:
         """Set tag names to values.
 
         This function expects keyword arguments. See the below examples.
@@ -94,21 +97,25 @@ class ProductivityPLC(AsyncioModbusClient):
         >>> set(av1=False)
         >>> set(target=0, setpoint=1.1)
         >>> set(**{'av1': False, 'av2': False})
+
+        Returns:
+            A list of write responses
         """
         discrete_to_write, registers_to_write = await self._parse_set_args(args, kwargs)
 
         responses = []
         if discrete_to_write:
-            resp = await self._write_discrete(discrete_to_write)
+            resp = await self._write_discrete_values(discrete_to_write)
             responses.append(str(resp))
 
         if registers_to_write:
             for key, value in registers_to_write.items():
                 resp = await self._write_register_value(key, value)
-                responses.append(str(resp[0]))
+                responses.append(str(resp))
+        # TODO: responses should be checked and errors turned into python exceptions
         return responses
 
-    async def _parse_set_args(self, args, kwargs):
+    async def _parse_set_args(self, args: tuple, kwargs: dict) -> Tuple[dict, dict]:
         """Parse and validate input to the set function."""
         if args:
             if len(args) == 1 and isinstance(args[0], dict):
@@ -137,7 +144,9 @@ class ProductivityPLC(AsyncioModbusClient):
                 ValueError(f"{key} is not at a writeable address: {start_address}")
         return discrete_to_write, registers_to_write
 
-    async def _write_register_value(self, key, value):
+    async def _write_register_value(self, key: str,
+                                    value: Union[str, float, int]
+                                    ) -> WriteMultipleRegistersResponse:
         """Write a single value to the holding registers.
 
         Currently registers are written one at a time to avoid issues with
@@ -164,10 +173,11 @@ class ProductivityPLC(AsyncioModbusClient):
         resp = await self.write_registers(start_address,
                                           builder.build(),
                                           skip_encode=True)
-        return resp
+        return resp[0]
 
-    async def _write_discrete(self, discrete_to_write):
-        """Write a set of discrete values to the PLC.
+    async def _write_discrete_values(self, discrete_to_write: dict
+                                     ) -> WriteMultipleCoilsResponse:
+        """Write a dict of discrete values to the PLC.
 
         To reduce the number of requests, the complete current state is
         read then updated and written back.
@@ -179,7 +189,7 @@ class ProductivityPLC(AsyncioModbusClient):
         resp = await self.write_coils(self.addresses['discrete_output']['address'], vals)
         return resp
 
-    async def _read_discrete(self, addresses, output=True):
+    async def _read_discrete(self, addresses: dict, output=True) -> dict:
         """Handle reading discrete values from the PLC."""
         result = {}
         if output:
@@ -198,7 +208,7 @@ class ProductivityPLC(AsyncioModbusClient):
             current += 1
         return result
 
-    async def _read_registers(self, a_type):
+    async def _read_registers(self, a_type: str) -> dict:
         """Handle reading input or holding registers from the PLC."""
         r = await self.read_registers(**self.addresses[a_type], type=a_type)
         decoder = BinaryPayloadDecoder.fromRegisters(r,
@@ -233,7 +243,7 @@ class ProductivityPLC(AsyncioModbusClient):
                 current += 1
         return result
 
-    def _load_tags(self, tag_filepath):
+    def _load_tags(self, tag_filepath: str) -> dict:
         """Load tags from file path.
 
         This tag file is needed to identify the appropriate variable names,
@@ -274,7 +284,7 @@ class ProductivityPLC(AsyncioModbusClient):
                        sorted(parsed, key=lambda k: parsed[k]['address']['start'])}
         return sorted_tags
 
-    def _calculate_addresses(self, tags):
+    def _calculate_addresses(self, tags: dict) -> dict:
         """Determine the minimum number of requests to get all tags.
 
         Modbus limits request length to ~250 bytes (125 registers, 2000 coils).
