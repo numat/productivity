@@ -106,13 +106,16 @@ class ProductivityPLC(AsyncioModbusClient):
         responses = []
         if discrete_to_write:
             resp = await self._write_discrete_values(discrete_to_write)
+            if resp.isError():
+                raise RuntimeError(f"Setting discrete values failed: {str(resp)}")
             responses.append(str(resp))
 
         if registers_to_write:
             for key, value in registers_to_write.items():
                 resp = await self._write_register_value(key, value)
+                if resp.isError():
+                    raise RuntimeError(f"Setting {key} failed: {str(resp)}")
                 responses.append(str(resp))
-        # TODO: responses should be checked and errors turned into python exceptions
         return responses
 
     async def _parse_set_args(self, args: tuple, kwargs: dict) -> Tuple[dict, dict]:
