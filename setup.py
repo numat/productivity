@@ -22,8 +22,8 @@ setup(
         'console_scripts': [('productivity = productivity:command_line')]
     },
     install_requires=[
-        'pymodbus==2.2.0rc1'
-        'PyYAML==5.1'
+        'pymodbus==2.2.0rc1',
+        'PyYAML==5.1',
     ],
     license='GPLv2',
     classifiers=[
