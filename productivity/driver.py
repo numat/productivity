@@ -127,7 +127,7 @@ class ProductivityPLC(AsyncioModbusClient):
                 raise TypeError("Unexpected input. See docstring.")
         if not kwargs:
             raise TypeError("Unexpected input. See docstring.")
-        to_write = {key.lower(): value for key, value in kwargs.items()}
+        to_write = {key: value for key, value in kwargs.items()}
         unsupported = set(to_write) - set(self.tags)
         if unsupported:
             raise ValueError(f"Missing tags: {', '.join(unsupported)}")
@@ -258,7 +258,7 @@ class ProductivityPLC(AsyncioModbusClient):
             csv_data = csv_file.read().splitlines()
         csv_data[0] = csv_data[0].lstrip('## ')
         parsed = {
-            row['Tag Name'].lower(): {
+            row['Tag Name']: {
                 'address': {
                     'start': int(row['MODBUS Start Address']),
                     'end': int(row['MODBUS End Address'])
