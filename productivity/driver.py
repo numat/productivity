@@ -7,6 +7,7 @@ Copyright (C) 2019 NuMat Technologies
 import csv
 import pydoc
 from typing import Tuple, Union
+from string import digits
 
 from pymodbus.constants import Endian
 from pymodbus.payload import BinaryPayloadBuilder, BinaryPayloadDecoder
@@ -137,7 +138,7 @@ class ProductivityPLC(AsyncioModbusClient):
         discrete_to_write, registers_to_write = {}, {}
         for key, value in to_write.items():
             start_address = self.tags[key]['address']['start']
-            data_type = self.tags[key]['type']
+            data_type = self.tags[key]['type'].rstrip(digits)
             if isinstance(value, int) and data_type == 'float':
                 to_write[key] = float(value)
             if not isinstance(value, pydoc.locate(data_type)):
