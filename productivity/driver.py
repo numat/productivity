@@ -24,6 +24,7 @@ data_types = {
     'DI': 'bool',      # Discrete Input
     'DO': 'bool',      # Discrete Output
     'SBR': 'bool',     # System Boolean Read-only
+    'SBRW': 'bool',     # System Boolean Read-Write
     'MST': 'bool',     # Module Status biT
     'STR': 'str',      # STRing
     'SSTR': 'str',     # System STRing
