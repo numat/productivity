@@ -24,7 +24,7 @@ data_types = {
     'DI': 'bool',      # Discrete Input
     'DO': 'bool',      # Discrete Output
     'SBR': 'bool',     # System Boolean Read-only
-    'SBRW': 'bool',     # System Boolean Read-Write
+    'SBRW': 'bool',    # System Boolean Read-Write
     'MST': 'bool',     # Module Status biT
     'STR': 'str',      # STRing
     'SSTR': 'str',     # System STRing
@@ -53,6 +53,7 @@ class ProductivityPLC(AsyncioModbusClient):
             address: The PLC IP address or DNS name
             tag_filepath: Path to the PLC tags file
             timeout (optional): Timeout when communicating with PLC. Default 1s.
+
         """
         super().__init__(address, timeout)
         self.tags = self._load_tags(tag_filepath)
@@ -101,6 +102,7 @@ class ProductivityPLC(AsyncioModbusClient):
 
         Returns:
             A list of write responses
+
         """
         discrete_to_write, registers_to_write = await self._parse_set_args(args, kwargs)
 
@@ -155,6 +157,7 @@ class ProductivityPLC(AsyncioModbusClient):
 
         Currently registers are written one at a time to avoid issues with
         discontinuous modbus addresses.
+
         """
         start_address = self.tags[key]['address']['start'] - 400001
         builder = BinaryPayloadBuilder(byteorder=Endian.Big,
@@ -185,6 +188,7 @@ class ProductivityPLC(AsyncioModbusClient):
 
         To reduce the number of requests, the complete current state is
         read then updated and written back.
+
         """
         current_state = await self._read_discrete(self.addresses['discrete_output'])
         new_state = {**current_state, **discrete_to_write}
@@ -254,6 +258,7 @@ class ProductivityPLC(AsyncioModbusClient):
         data types, and modbus addresses. I would love to be able to read
         this directly from the PLC but cannot find any documentation on the
         programming port (9999).
+
         """
         with open(tag_filepath) as csv_file:
             csv_data = csv_file.read().splitlines()
@@ -295,6 +300,7 @@ class ProductivityPLC(AsyncioModbusClient):
         We could make this fun and automatic but I don't think most use cases
         need that level of fanciness. I'm leaving it very simple until someone
         tells me it's an issue.
+
         """
         addresses = sorted([tag['address']['start'] for tag in tags.values()] +
                            [tag['address']['end'] for tag in tags.values()])
