@@ -23,7 +23,7 @@ setup(
     },
     install_requires=[
         'pymodbus==2.2.0rc1',
-        'PyYAML==5.1',
+        'PyYAML',
     ],
     license='GPLv2',
     classifiers=[
