@@ -6,7 +6,7 @@ Copyright (C) 2019 NuMat Technologies
 """
 import csv
 import pydoc
-from typing import Tuple, Union
+from typing import Tuple, Union, Optional
 from string import digits
 
 from pymodbus.constants import Endian
@@ -92,20 +92,22 @@ class ProductivityPLC(AsyncioModbusClient):
         """
         return self.tags
 
-    async def set(self, *args, **kwargs) -> list:
+    async def set(self, data_dict: dict = None, *args, **kwargs) -> list:
         """Set tag names to values.
 
-        This function expects keyword arguments. See the below examples.
+        This function expects a dictionary of values or keyword arguments.
+        See the following examples.
 
-        >>> set(av1=False)
+        >>> set({'av1': False, 'av2': False})
+        >>> set(av1=False, av2=False)
         >>> set(target=0, setpoint=1.1)
-        >>> set(**{'av1': False, 'av2': False})
 
         Returns:
             A list of write responses
 
         """
-        discrete_to_write, registers_to_write = await self._parse_set_args(args, kwargs)
+        discrete_to_write, registers_to_write = await self._parse_set_args(data_dict,
+                                                                           args, kwargs)
 
         responses = []
         if discrete_to_write:
@@ -122,19 +124,22 @@ class ProductivityPLC(AsyncioModbusClient):
                 responses.append(str(resp))
         return responses
 
-    async def _parse_set_args(self, args: tuple, kwargs: dict) -> Tuple[dict, dict]:
+    async def _parse_set_args(self, data_dict: Optional[dict],
+                              args: tuple, kwargs: dict) -> Tuple[dict, dict]:
         """Parse and validate input to the set function."""
+        if data_dict:
+            kwargs.update(data_dict)
         if args:
-            if len(args) == 1 and isinstance(args[0], dict):
-                raise ValueError("Remember to unpack! `plc.set(**params)`.")
-            else:
-                raise TypeError("Unexpected input. See docstring.")
+            raise TypeError(f"Invalid input. See the following docstring:\n"
+                            f"{self.set.__doc__}")
         if not kwargs:
-            raise TypeError("Unexpected input. See docstring.")
+            raise TypeError(f"No settings provided. See the following docstring:\n"
+                            f"{self.set.__doc__}")
         to_write = {key: value for key, value in kwargs.items()}
         unsupported = set(to_write) - set(self.tags)
         if unsupported:
-            raise ValueError(f"Missing tags: {', '.join(unsupported)}")
+            raise ValueError(f"The tags file is missing the following tags:"
+                             f" {', '.join(unsupported)}")
         discrete_to_write, registers_to_write = {}, {}
         for key, value in to_write.items():
             start_address = self.tags[key]['address']['start']
