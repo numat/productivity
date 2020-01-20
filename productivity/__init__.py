@@ -18,7 +18,7 @@ def command_line():
                                      "from the command line.")
     parser.add_argument('address', help="The IP address of the PLC.")
     parser.add_argument('tags', help="The PLC tag database file.")
-    parser.add_argument('-s', '--set', type=yaml.load,
+    parser.add_argument('-s', '--set', type=yaml.safe_load,
                         help="Pass a YAML string with parameters to be set.")
     args = parser.parse_args()
 
