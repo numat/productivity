@@ -5,14 +5,16 @@ Distributed under the GNU General Public License v2
 Copyright (C) 2019 NuMat Technologies
 """
 import csv
+import logging
 import pydoc
 from math import ceil
-from typing import Tuple, Union, Optional
 from string import digits
+from typing import Tuple, Union, Optional, List
 
+from pymodbus.bit_write_message import WriteSingleCoilResponse
+from pymodbus.bit_write_message import WriteMultipleCoilsResponse
 from pymodbus.constants import Endian
 from pymodbus.payload import BinaryPayloadBuilder, BinaryPayloadDecoder
-from pymodbus.bit_write_message import WriteMultipleCoilsResponse
 from pymodbus.register_write_message import WriteMultipleRegistersResponse
 
 from productivity.util import AsyncioModbusClient
@@ -58,6 +60,7 @@ class ProductivityPLC(AsyncioModbusClient):
 
         """
         super().__init__(address, timeout)
+        self.discontinuous_discrete_output = False
         self.tags = self._load_tags(tag_filepath)
         self.addresses = self._calculate_addresses(self.tags)
         self.map = {data['address']['start']: tag for tag, data in self.tags.items()}
@@ -93,7 +96,8 @@ class ProductivityPLC(AsyncioModbusClient):
         """
         return self.tags
 
-    async def set(self, data_dict: dict = None, *args, **kwargs) -> list:
+    async def set(self, data_dict: dict = None, *args, **kwargs
+                  ) -> List[Union[WriteSingleCoilResponse, WriteMultipleCoilsResponse]]:
         """Set tag names to values.
 
         This function expects a dictionary of values or keyword arguments.
@@ -113,9 +117,9 @@ class ProductivityPLC(AsyncioModbusClient):
         responses = []
         if discrete_to_write:
             resp = await self._write_discrete_values(discrete_to_write)
-            if resp.isError():
+            if any(r.isError() for r in resp):
                 raise RuntimeError(f"Setting discrete values failed: {str(resp)}")
-            responses.append(str(resp))
+            responses.extend(str(r) for r in resp)
 
         if registers_to_write:
             for key, value in registers_to_write.items():
@@ -190,19 +194,24 @@ class ProductivityPLC(AsyncioModbusClient):
         return resp[0]
 
     async def _write_discrete_values(self, discrete_to_write: dict
-                                     ) -> WriteMultipleCoilsResponse:
+                                     ) -> List[Union[WriteSingleCoilResponse,
+                                                     WriteMultipleCoilsResponse]]:
         """Write a dict of discrete values to the PLC.
 
         To reduce the number of requests, the complete current state is
         read then updated and written back.
 
         """
+        if len(discrete_to_write) == 1 or self.discontinuous_discrete_output:
+            return [await self.write_coil(self.tags[key]['address']['start'] - 1, val)
+                    for key, val in discrete_to_write.items()]
+
         current_state = await self._read_discrete(self.addresses['discrete_output'])
         new_state = {**current_state, **discrete_to_write}
         vals = [new_state[key] for key in self.tags if key in new_state]
         assert len(vals) == len(new_state)
-        resp = await self.write_coils(self.addresses['discrete_output']['address'], vals)
-        return resp
+        return [await self.write_coils(
+            self.addresses['discrete_output']['address'], vals)]
 
     async def _read_discrete(self, addresses: dict, output=True) -> dict:
         """Handle reading discrete values from the PLC."""
@@ -313,6 +322,7 @@ class ProductivityPLC(AsyncioModbusClient):
         addresses = sorted([tag['address']['start'] for tag in tags.values()] +
                            [tag['address']['end'] for tag in tags.values()])
         output = {}
+        do_count = 0
         for a in addresses:
             if 0 < a < 65536:
                 a_type = 'discrete_output'
@@ -335,4 +345,11 @@ class ProductivityPLC(AsyncioModbusClient):
                 raise ValueError(f"Only supporting an address span of 2000 {found_type}."
                                  " If you need more, open a github issue at "
                                  "numat/productivity.")
+
+        if do_count < output['discrete_output']['count']:
+            self.discontinuous_discrete_output = True
+            logging.warning(
+                "Warning: Your tags file has gaps in discrete output modbus addresses."
+                " This driver will fall back to setting values in this range serially "
+                "rather than as a block.")
         return output
