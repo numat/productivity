@@ -6,6 +6,7 @@ Copyright (C) 2019 NuMat Technologies
 """
 import csv
 import pydoc
+from math import ceil
 from typing import Tuple, Union, Optional
 from string import digits
 
@@ -241,7 +242,9 @@ class ProductivityPLC(AsyncioModbusClient):
                 elif data_type == 'str':
                     chars = self.tags[tag]['length']
                     result[tag] = decoder.decode_string(chars).decode('ascii')
-                    current += max(chars // 2, 1)
+                    # Handle odd length strings
+                    current += ceil(chars / 2)
+                    decoder._pointer += chars % 2
                 elif data_type == 'int':
                     result[tag] = decoder.decode_16bit_int()
                     current += 1
@@ -251,8 +254,7 @@ class ProductivityPLC(AsyncioModbusClient):
                 else:
                     raise ValueError("Missing data type.")
             else:
-                # Empty modbus addresses or odd length strings could land you on a
-                # register that's not used
+                # Empty modbus addresses could land you on a register that's not used
                 decoder._pointer += 2
                 current += 1
         return result
