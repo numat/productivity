@@ -150,7 +150,7 @@ class ProductivityPLC(AsyncioModbusClient):
             start_address = self.tags[key]['address']['start']
             data_type = self.tags[key]['type'].rstrip(digits)
             if isinstance(value, int) and data_type == 'float':
-                to_write[key] = float(value)
+                value = float(value)
             if not isinstance(value, pydoc.locate(data_type)):
                 raise ValueError(f"Expected {key} to be a {data_type}.")
             if 0 <= start_address < 65536:
@@ -346,7 +346,7 @@ class ProductivityPLC(AsyncioModbusClient):
                                  " If you need more, open a github issue at "
                                  "numat/productivity.")
 
-        if do_count < output['discrete_output']['count']:
+        if 'discrete_output' in output and do_count < output['discrete_output']['count']:
             self.discontinuous_discrete_output = True
             logging.warning(
                 "Warning: Your tags file has gaps in discrete output modbus addresses."
