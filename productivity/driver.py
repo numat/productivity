@@ -311,8 +311,7 @@ class ProductivityPLC(AsyncioModbusClient):
                        sorted(parsed, key=lambda k: parsed[k]['address']['start'])}
         return sorted_tags
 
-    @staticmethod
-    def _calculate_addresses(tags: dict) -> dict:
+    def _calculate_addresses(self, tags: dict) -> dict:
         """Determine the minimum number of requests to get all tags.
 
         Modbus limits request length to ~250 bytes (125 registers, 2000 coils).
