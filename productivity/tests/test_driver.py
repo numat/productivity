@@ -40,7 +40,9 @@ def test_get_tags(plc_driver):
         'GAS-101': {'address': {'start': 400019, 'end': 400022}, 'id': 'STR-000001',
                     'comment': 'Acid gas', 'length': 8, 'type': 'str'},
         'GAS-102': {'address': {'start': 400023, 'end': 400026}, 'id': 'STR-000002',
-                    'comment': 'Base gas', 'length': 8, 'type': 'str'}
+                    'comment': 'Base gas', 'length': 8, 'type': 'str'},
+        'Raw Pressure': {'address': {'end': 400028, 'start': 400027}, 'type': 'int32',
+                         'comment': 'Analog Pressure', 'id': 'AIS32-000001'},
     }
     assert plc_driver.get_tags() == expected
 
@@ -49,19 +51,19 @@ def test_get_tags(plc_driver):
 async def test_get(plc_driver):
     expected = {'AV-101': False, 'toggle_AV-101': False, 'toggle_AV-102': False,
                 'FALL-101_OK': False, 'FAL-101_OK': False, 'ESD_OK': False,
-                'FI-101': 0.0, 'FI-102': 0.0, 'FIC-102_SP': 0.0,
+                'FI-101': 0.0, 'FI-102': 0.0, 'FIC-102_SP': 0.0, 'Raw Pressure': 0,
                 'GAS-101': '\x00\x00\x00\x00\x00\x00\x00\x00',
                 'GAS-102': '\x00\x00\x00\x00\x00\x00\x00\x00'}
     assert await plc_driver.get() == expected
 
 @pytest.mark.asyncio
 async def test_roundtrip(plc_driver):
-    await plc_driver.set({'AV-101': True, 'toggle_AV-101': True,
+    await plc_driver.set({'AV-101': True, 'toggle_AV-101': True, 'Raw Pressure': 1,
                           'FI-101': 20.0, 'GAS-101': 'FOO'})
     expected = {'AV-101': True, 'toggle_AV-101': True, 'toggle_AV-102': False,
                 'FALL-101_OK': False, 'FAL-101_OK': False, 'ESD_OK': False,
-                'FI-101': 20.0, 'FI-102': 0.0, 'FIC-102_SP': 0.0, 'GAS-101': 'FOO     ',
-                'GAS-102': '\x00\x00\x00\x00\x00\x00\x00\x00'}
+                'FI-101': 20.0, 'FI-102': 0.0, 'FIC-102_SP': 0.0, 'Raw Pressure': 1,
+                'GAS-101': 'FOO     ', 'GAS-102': '\x00\x00\x00\x00\x00\x00\x00\x00'}
     assert await plc_driver.get() == expected
 
 
