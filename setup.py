@@ -25,6 +25,13 @@ setup(
         'pymodbus==2.2.0rc1',
         'PyYAML',
     ],
+    extras_require={
+        'test': [
+            'pytest',
+            'pytest-cov',
+            'pytest-asyncio',
+        ],
+    },
     license='GPLv2',
     classifiers=[
         'License :: OSI Approved :: GNU General Public License v2 (GPLv2)',
