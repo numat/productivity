@@ -68,6 +68,8 @@ async def test_roundtrip(plc_driver):
 @pytest.mark.asyncio
 async def test_set_errors(plc_driver):
     with pytest.raises(TypeError, match='Invalid input'):
+        await plc_driver.set('FOO')
+    with pytest.raises(TypeError, match='Invalid input'):
         await plc_driver.set({}, True)
     with pytest.raises(TypeError, match='No settings provided'):
         await plc_driver.set()
