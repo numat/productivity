@@ -10,7 +10,7 @@ with open('README.md', 'r') as in_file:
 
 setup(
     name='productivity',
-    version='0.3.13',
+    version='0.3.14',
     description="Python driver for AutomationDirect Productivity Series PLCs.",
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -25,6 +25,13 @@ setup(
         'pymodbus==2.2.0rc1',
         'PyYAML',
     ],
+    extras_require={
+        'test': [
+            'pytest',
+            'pytest-cov',
+            'pytest-asyncio',
+        ],
+    },
     license='GPLv2',
     classifiers=[
         'License :: OSI Approved :: GNU General Public License v2 (GPLv2)',

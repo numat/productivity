@@ -132,9 +132,9 @@ class ProductivityPLC(AsyncioModbusClient):
     async def _parse_set_args(self, data_dict: Optional[dict],
                               args: tuple, kwargs: dict) -> Tuple[dict, dict]:
         """Parse and validate input to the set function."""
-        if data_dict:
+        if isinstance(data_dict, dict):
             kwargs.update(data_dict)
-        if args:
+        if args or (data_dict and not isinstance(data_dict, dict)):
             raise TypeError(f"Invalid input. See the following docstring:\n"
                             f"{self.set.__doc__}")
         if not kwargs:
