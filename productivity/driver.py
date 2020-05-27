@@ -23,6 +23,7 @@ data_types = {
     'AIF32': 'float',  # Analog Input Float 32-bit
     'F32': 'float',    # Float 32-bit
     'AIS32': 'int32',  # Analog Input (S)integer 32-bit
+    'AOS32': 'int32',  # Analog Output (S)integer 32-bit
     'S32': 'int32',    # (S)integer 32-bit'
     'C': 'bool',       # (C) Boolean,
     'DI': 'bool',      # Discrete Input
