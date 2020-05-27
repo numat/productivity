@@ -26,8 +26,6 @@ class ProductivityPLC(realProductivityPLC):
         self._registers = defaultdict(bytes)
 
     async def _request(self, method, *args, **kwargs):
-        print(method, args, kwargs)
-        print(self._registers)
         if method == 'read_coils':
             address, count = args
             return ReadCoilsResponse([self._coils[address + i] for i in range(count)])
