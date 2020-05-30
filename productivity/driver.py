@@ -22,19 +22,19 @@ from productivity.util import AsyncioModbusClient
 data_types = {
     'AIF32': 'float',  # Analog Input Float 32-bit
     'F32': 'float',    # Float 32-bit
-    'AIS32': 'int32',  # Analog Input (S)integer 32-bit
-    'AOS32': 'int32',  # Analog Output (S)integer 32-bit
-    'S32': 'int32',    # (S)integer 32-bit'
-    'C': 'bool',       # (C) Boolean,
+    'AIS32': 'int32',  # Analog Input Signed integer 32-bit
+    'AOS32': 'int32',  # Analog Output Signed integer 32-bit
+    'S32': 'int32',    # Signed integer 32-bit
+    'C': 'bool',       # (C) Boolean
     'DI': 'bool',      # Discrete Input
     'DO': 'bool',      # Discrete Output
     'SBR': 'bool',     # System Boolean Read-only
     'SBRW': 'bool',    # System Boolean Read-Write
-    'MST': 'bool',     # Module Status biT
+    'MST': 'bool',     # Module STatus bit
     'STR': 'str',      # STRing
     'SSTR': 'str',     # System STRing
-    'SWR': 'int',      # System (W)integer Read-only
-    'SWRW': 'int'      # System (W)integer Read-Write
+    'SWR': 'int16',      # System Word Read-only
+    'SWRW': 'int16'      # System Word Read-Write
 }
 type_start = {
     'discrete_output': 0,
@@ -183,7 +183,7 @@ class ProductivityPLC(AsyncioModbusClient):
                 raise ValueError(f'{value} is too long for {key}. '
                                  f'Max: {chars} chars')
             builder.add_string(value.ljust(chars))
-        elif data_type == 'int':
+        elif data_type == 'int16':
             builder.add_16bit_int(value)
         elif data_type == 'int32':
             builder.add_32bit_int(value)
@@ -255,7 +255,7 @@ class ProductivityPLC(AsyncioModbusClient):
                     # Handle odd length strings
                     current += ceil(chars / 2)
                     decoder._pointer += chars % 2
-                elif data_type == 'int':
+                elif data_type == 'int16':
                     result[tag] = decoder.decode_16bit_int()
                     current += 1
                 elif data_type == 'int32':
