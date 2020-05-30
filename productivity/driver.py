@@ -33,8 +33,8 @@ data_types = {
     'MST': 'bool',     # Module STatus bit
     'STR': 'str',      # STRing
     'SSTR': 'str',     # System STRing
-    'SWR': 'int',      # System Word Read-only
-    'SWRW': 'int'      # System Word Read-Write
+    'SWR': 'int16',      # System Word Read-only
+    'SWRW': 'int16'      # System Word Read-Write
 }
 type_start = {
     'discrete_output': 0,
@@ -183,7 +183,7 @@ class ProductivityPLC(AsyncioModbusClient):
                 raise ValueError(f'{value} is too long for {key}. '
                                  f'Max: {chars} chars')
             builder.add_string(value.ljust(chars))
-        elif data_type == 'int':
+        elif data_type == 'int16':
             builder.add_16bit_int(value)
         elif data_type == 'int32':
             builder.add_32bit_int(value)
@@ -255,7 +255,7 @@ class ProductivityPLC(AsyncioModbusClient):
                     # Handle odd length strings
                     current += ceil(chars / 2)
                     decoder._pointer += chars % 2
-                elif data_type == 'int':
+                elif data_type == 'int16':
                     result[tag] = decoder.decode_16bit_int()
                     current += 1
                 elif data_type == 'int32':
