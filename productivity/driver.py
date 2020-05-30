@@ -22,19 +22,19 @@ from productivity.util import AsyncioModbusClient
 data_types = {
     'AIF32': 'float',  # Analog Input Float 32-bit
     'F32': 'float',    # Float 32-bit
-    'AIS32': 'int32',  # Analog Input (S)integer 32-bit
-    'AOS32': 'int32',  # Analog Output (S)integer 32-bit
-    'S32': 'int32',    # (S)integer 32-bit'
-    'C': 'bool',       # (C) Boolean,
+    'AIS32': 'int32',  # Analog Input Signed integer 32-bit
+    'AOS32': 'int32',  # Analog Output Signed integer 32-bit
+    'S32': 'int32',    # Signed integer 32-bit
+    'C': 'bool',       # (C) Boolean
     'DI': 'bool',      # Discrete Input
     'DO': 'bool',      # Discrete Output
     'SBR': 'bool',     # System Boolean Read-only
     'SBRW': 'bool',    # System Boolean Read-Write
-    'MST': 'bool',     # Module Status biT
+    'MST': 'bool',     # Module STatus bit
     'STR': 'str',      # STRing
     'SSTR': 'str',     # System STRing
-    'SWR': 'int',      # System (W)integer Read-only
-    'SWRW': 'int'      # System (W)integer Read-Write
+    'SWR': 'int',      # System Word Read-only
+    'SWRW': 'int'      # System Word Read-Write
 }
 type_start = {
     'discrete_output': 0,
