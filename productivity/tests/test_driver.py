@@ -23,7 +23,7 @@ def test_get_tags(plc_driver):
                           'type': 'bool'},
         'AV-102': {'address': {'start': 6, 'end': 6}, 'id': 'DO-0.1.3.6',
                    'comment': 'Gas valve', 'type': 'bool'},
-        'FALL-101_OK': {'address': {'start': 6, 'end': 6}, 'id': 'C-000050',
+        'FALL-101_OK': {'address': {'start': 8, 'end': 8}, 'id': 'C-000050',
                         'comment': 'Low-low beer flow shutdown', 'type': 'bool'},
         'FAL-101_OK': {'address': {'start': 7, 'end': 7}, 'id': 'C-000051',
                        'comment': 'Low beer flow warning', 'type': 'bool'},
@@ -33,10 +33,6 @@ def test_get_tags(plc_driver):
                    'comment': 'Source gas transducer', 'type': 'float'},
         'FI-102': {'address': {'start': 400003, 'end': 400004}, 'id': 'F32-000006',
                    'comment': 'Sample cell transducer', 'type': 'float'},
-        'FIC-101_SP': {'address': {'start': 400005, 'end': 400005}, 'id': 'F32-000009',
-                       'comment': 'Source gas pressure setpoint', 'type': 'float'},
-        'FIC-102_SP': {'address': {'start': 400005, 'end': 400005}, 'id': 'F32-000012',
-                       'comment': 'Sample cell pressure setpoint', 'type': 'float'},
         'GAS-101': {'address': {'start': 400019, 'end': 400022}, 'id': 'STR-000001',
                     'comment': 'Acid gas', 'length': 8, 'type': 'str'},
         'GAS-102': {'address': {'start': 400023, 'end': 400026}, 'id': 'STR-000002',
@@ -49,21 +45,23 @@ def test_get_tags(plc_driver):
 
 @pytest.mark.asyncio
 async def test_get(plc_driver):
-    expected = {'AV-101': False, 'toggle_AV-101': False, 'toggle_AV-102': False,
-                'FALL-101_OK': False, 'FAL-101_OK': False, 'ESD_OK': False,
-                'FI-101': 0.0, 'FI-102': 0.0, 'FIC-102_SP': 0.0, 'Raw Pressure': 0,
+    expected = {'AV-101': False, 'AV-102': False, 'toggle_AV-101': False,
+                'toggle_AV-102': False, 'FALL-101_OK': False, 'FAL-101_OK': False,
+                'ESD_OK': False, 'FI-101': 0.0, 'FI-102': 0.0, 'Raw Pressure': 0,
                 'GAS-101': '\x00\x00\x00\x00\x00\x00\x00\x00',
                 'GAS-102': '\x00\x00\x00\x00\x00\x00\x00\x00'}
     assert await plc_driver.get() == expected
+
 
 @pytest.mark.asyncio
 async def test_roundtrip(plc_driver):
     await plc_driver.set({'AV-101': True, 'toggle_AV-101': True, 'Raw Pressure': 1,
                           'FI-101': 20.0, 'GAS-101': 'FOO'})
-    expected = {'AV-101': True, 'toggle_AV-101': True, 'toggle_AV-102': False,
-                'FALL-101_OK': False, 'FAL-101_OK': False, 'ESD_OK': False,
-                'FI-101': 20.0, 'FI-102': 0.0, 'FIC-102_SP': 0.0, 'Raw Pressure': 1,
-                'GAS-101': 'FOO     ', 'GAS-102': '\x00\x00\x00\x00\x00\x00\x00\x00'}
+    expected = {'AV-101': True, 'AV-102': False, 'toggle_AV-101': True,
+                'toggle_AV-102': False, 'FALL-101_OK': False, 'FAL-101_OK': False,
+                'ESD_OK': False, 'FI-101': 20.0, 'FI-102': 0.0,
+                'Raw Pressure': 1, 'GAS-101': 'FOO     ',
+                'GAS-102': '\x00\x00\x00\x00\x00\x00\x00\x00'}
     assert await plc_driver.get() == expected
 
 

@@ -328,6 +328,7 @@ class ProductivityPLC(AsyncioModbusClient):
         for a in addresses:
             if 0 < a < 65536:
                 a_type = 'discrete_output'
+                do_count += 1
             elif 100000 < a < 165536:
                 a_type = 'discrete_input'
             elif 300000 < a < 365536:
@@ -348,7 +349,7 @@ class ProductivityPLC(AsyncioModbusClient):
                                  " If you need more, open a github issue at "
                                  "numat/productivity.")
 
-        if 'discrete_output' in output and do_count < output['discrete_output']['count']:
+        if 'discrete_output' in output and do_count/2 < output['discrete_output']['count']:
             self.discontinuous_discrete_output = True
             logging.warning(
                 "Warning: Your tags file has gaps in discrete output modbus addresses."

@@ -23,6 +23,7 @@ class AsyncioModbusClient(object):
         self.ip = address
         self.timeout = timeout
         self.client = ReconnectingAsyncioModbusTcpClient()
+        asyncio.ensure_future(self._connect())
         self.open = False
         self.waiting = False
 
@@ -108,8 +109,6 @@ class AsyncioModbusClient(object):
         exist, other logic will have to be added to either prevent or manage
         race conditions.
         """
-        if not self.open:
-            await self._connect()
         while self.waiting:
             await asyncio.sleep(0.1)
         if self.client.protocol is None or not self.client.protocol.connected:
