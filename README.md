@@ -32,8 +32,7 @@ you don't need to remember the addresses.
 
 ### Command Line
 
-To print the tags and their values, simply call the library with the PLC IP address and 
-the tags file.
+To print the tags and their values, simply call the library with the PLC IP address and the tags file.
 ```
 $ productivity the-plc-ip-address path/to/tags.csv
 ```
@@ -49,7 +48,7 @@ See `productivity --help` for more.
 ### Python
 
 This driver uses Python ≥3.5's async/await syntax to asynchronously communicate with
-a ClickPLC. For example:
+a Productivity2000 PLC. For example (note that asyncio.run() requires Python >=3.7):
 
 ```python
 import asyncio

@@ -1,3 +1,12 @@
+"""
+Python mock driver for AutomationDirect Productivity Series PLCs.
+
+Uses local storage instead of remote communications.
+
+Distributed under the GNU General Public License v2
+Copyright (C) 2020 NuMat Technologies
+"""
+
 from collections import defaultdict
 from unittest.mock import MagicMock
 
@@ -10,16 +19,21 @@ from productivity.driver import ProductivityPLC as realProductivityPLC
 
 
 class AsyncMock(MagicMock):
-    """Magic mock that works with async methods"""
+    """Magic mock that works with async methods."""
+
     async def __call__(self, *args, **kwargs):
+        """Convert __call__ into an async coroutine."""
         return super(AsyncMock, self).__call__(*args, **kwargs)
 
 
 class ProductivityPLC(realProductivityPLC):
-    """A version of the driver with the remote communication replaced with local data storage
-    for testing"""
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    """Mock Productivity driver using local storage instead of remote communication."""
+
+    def __init__(self, address, tag_filepath, timeout=1, *args, **kwargs):
+        self.discontinuous_discrete_output = False
+        self.tags = self._load_tags(tag_filepath)
+        self.addresses = self._calculate_addresses(self.tags)
+        self.map = {data['address']['start']: tag for tag, data in self.tags.items()}
         self.client = AsyncMock()
         self._coils = defaultdict(bool)
         self._discrete_inputs = defaultdict(bool)
