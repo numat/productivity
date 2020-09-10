@@ -18,12 +18,16 @@ from pymodbus.register_write_message import WriteMultipleRegistersResponse
 from productivity.driver import ProductivityPLC as realProductivityPLC
 
 
-class AsyncMock(MagicMock):
+class AsyncClientMock(MagicMock):
     """Magic mock that works with async methods."""
 
     async def __call__(self, *args, **kwargs):
-        """Convert __call__ into an async coroutine."""
-        return super(AsyncMock, self).__call__(*args, **kwargs)
+        """Convert regular mocks into into an async coroutine."""
+        return super().__call__(*args, **kwargs)
+
+    def stop(self):
+        """Overide 'stop' as it is the one non-async method in the client."""
+        pass
 
 
 class ProductivityPLC(realProductivityPLC):
@@ -32,7 +36,7 @@ class ProductivityPLC(realProductivityPLC):
     @patch('pymodbus.client.asynchronous.asyncio.ReconnectingAsyncioModbusTcpClient')
     def __init__(self, address, tag_filepath, timeout=1, *args, **kwargs):
         super().__init__(address, tag_filepath, timeout)
-        self.client = AsyncMock()
+        self.client = AsyncClientMock()
         self._coils = defaultdict(bool)
         self._discrete_inputs = defaultdict(bool)
         self._registers = defaultdict(bytes)
