@@ -1,5 +1,14 @@
+"""
+Python mock driver for AutomationDirect Productivity Series PLCs.
+
+Uses local storage instead of remote communications.
+
+Distributed under the GNU General Public License v2
+Copyright (C) 2020 NuMat Technologies
+"""
+
 from collections import defaultdict
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from pymodbus.bit_read_message import ReadCoilsResponse, ReadDiscreteInputsResponse
 from pymodbus.bit_write_message import WriteSingleCoilResponse, WriteMultipleCoilsResponse
@@ -9,18 +18,25 @@ from pymodbus.register_write_message import WriteMultipleRegistersResponse
 from productivity.driver import ProductivityPLC as realProductivityPLC
 
 
-class AsyncMock(MagicMock):
-    """Magic mock that works with async methods"""
+class AsyncClientMock(MagicMock):
+    """Magic mock that works with async methods."""
+
     async def __call__(self, *args, **kwargs):
-        return super(AsyncMock, self).__call__(*args, **kwargs)
+        """Convert regular mocks into into an async coroutine."""
+        return super().__call__(*args, **kwargs)
+
+    def stop(self):
+        """Overide 'stop' as it is the one non-async method in the client."""
+        pass
 
 
 class ProductivityPLC(realProductivityPLC):
-    """A version of the driver with the remote communication replaced with local data storage
-    for testing"""
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.client = AsyncMock()
+    """Mock Productivity driver using local storage instead of remote communication."""
+
+    @patch('pymodbus.client.asynchronous.asyncio.ReconnectingAsyncioModbusTcpClient')
+    def __init__(self, address, tag_filepath, timeout=1, *args, **kwargs):
+        super().__init__(address, tag_filepath, timeout)
+        self.client = AsyncClientMock()
         self._coils = defaultdict(bool)
         self._discrete_inputs = defaultdict(bool)
         self._registers = defaultdict(bytes)

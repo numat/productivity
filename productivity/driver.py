@@ -321,8 +321,8 @@ class ProductivityPLC(AsyncioModbusClient):
         tells me it's an issue.
 
         """
-        addresses = sorted([tag['address']['start'] for tag in tags.values()] +
-                           [tag['address']['end'] for tag in tags.values()])
+        addresses = sorted([tag['address']['start'] for tag in tags.values()]
+                           + [tag['address']['end'] for tag in tags.values()])
         output = {}
         do_count = 0
         for a in addresses:
@@ -349,7 +349,7 @@ class ProductivityPLC(AsyncioModbusClient):
                                  " If you need more, open a github issue at "
                                  "numat/productivity.")
 
-        if 'discrete_output' in output and do_count/2 < output['discrete_output']['count']:
+        if 'discrete_output' in output and do_count / 2 < output['discrete_output']['count']:
             self.discontinuous_discrete_output = True
             logging.warning(
                 "Warning: Your tags file has gaps in discrete output modbus addresses."
