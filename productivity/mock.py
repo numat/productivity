@@ -13,6 +13,7 @@ from unittest.mock import MagicMock, patch
 from pymodbus.bit_read_message import ReadCoilsResponse, ReadDiscreteInputsResponse
 from pymodbus.bit_write_message import WriteSingleCoilResponse, WriteMultipleCoilsResponse
 from pymodbus.register_read_message import ReadHoldingRegistersResponse
+from pymodbus.register_write_message import WriteSingleRegisterResponse
 from pymodbus.register_write_message import WriteMultipleRegistersResponse
 
 from productivity.driver import ProductivityPLC as realProductivityPLC
@@ -63,6 +64,10 @@ class ProductivityPLC(realProductivityPLC):
             for i, d in enumerate(data):
                 self._coils[address + i] = d
             return WriteMultipleCoilsResponse(address, len(data))
+        elif method == 'write_register':
+            address, data = args
+            self._registers[address] = data
+            return WriteSingleRegisterResponse(address, data)
         elif method == 'write_registers':
             address, data = args
             for i, d in enumerate(data):
