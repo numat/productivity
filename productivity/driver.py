@@ -263,11 +263,13 @@ class ProductivityPLC(AsyncioModbusClient):
                 elif data_type == 'str':
                     chars = self.tags[tag]['length']
                     try:
+                        codec = 'unicode-escape'
                         test_decoder = deepcopy(decoder)
-                        test_decoder.decode_string(chars).decode('ascii')
-                        result[tag] = decoder.decode_string(chars).decode('ascii')
+                        test_decoder.decode_string(chars).decode(codec)
+                        result[tag] = decoder.decode_string(chars).decode(codec).strip('\u0000')
                     except UnicodeDecodeError as e:
-                        result[tag] = decoder.decode_string(chars).decode('ascii', 'ignore')
+                        result[tag] = decoder.decode_string(chars).decode(codec, 'ignore') \
+                            .strip('\u0000')
                         logging.error(f"Decoding register {current} had an error,"
                                       f" which was ignored: {e}")
                     # Handle odd length strings
