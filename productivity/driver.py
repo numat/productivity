@@ -63,7 +63,8 @@ class ProductivityPLC(AsyncioModbusClient):
 
         """
         super().__init__(address, timeout)
-        self.discontinuous_discrete_output = False
+        self.discontinuous_discrete_output_write = False
+        self.discontinuous_discrete_output_read = False
         self.tags = self._load_tags(tag_filepath)
         self.addresses = self._calculate_addresses(self.tags)
         self.map = {data['address']['start']: tag for tag, data in self.tags.items()}
@@ -205,7 +206,7 @@ class ProductivityPLC(AsyncioModbusClient):
         read then updated and written back.
 
         """
-        if len(discrete_to_write) == 1 or self.discontinuous_discrete_output:
+        if len(discrete_to_write) == 1 or self.discontinuous_discrete_output_write:
             return [await self.write_coil(self.tags[key]['address']['start'] - 1, val)
                     for key, val in discrete_to_write.items()]
 
@@ -216,33 +217,59 @@ class ProductivityPLC(AsyncioModbusClient):
         return [await self.write_coils(
             self.addresses['discrete_output']['address'], vals)]
 
+    def _log_modbus_exception(self, address, count, output: bool, response):
+        """Parse a modbus ExceptionResponse and log it."""
+        func = response.function_code
+        if (output and func != 129) or (output is False and func != 130):
+            raise ValueError(f"Received function code {func} which does not match request")
+        excep = response.exception_code
+        read_type = "coil(s)" if output else "discrete input(s)"
+        logging.error(f"Received MODBUS exception code {excep} when reading "
+                      f"{count} {read_type} at {address}\n")
+
+    async def _read_discrete_discontinous(self, addresses: dict, output=True) -> dict:
+        """Read discrete values from the PLC, one at a time."""
+        result = {}
+        start = addresses['address']
+        end = addresses['count']
+        for a in (a for a in range(start, end) if a + 1 in self.map):
+            response = await self.read_coils(a, 1)
+            if isinstance(response, ExceptionResponse):
+                self._log_modbus_exception(a, 1, output, response)
+            else:
+                result[self.map[a + 1]] = response.bits[0]
+        return result
+
     async def _read_discrete(self, addresses: dict, output=True) -> dict:
         """Handle reading discrete values from the PLC."""
         result = {}
         if output:
-            response = await self.read_coils(**addresses)
-            current = addresses['address'] + 1
+            if self.discontinuous_discrete_output_read:
+                result = await self._read_discrete_discontinous(addresses, output)
+                return result
+            else:
+                response = await self.read_coils(**addresses)
+                current = addresses['address'] + 1
         else:
             response = await self.read_discrete_inputs(**addresses)
             current = addresses['address'] + 100001
 
         end = current + addresses['count']
         if isinstance(response, ExceptionResponse):
-            func = response.function_code
-            if (output and func != 129) or (output is False and func != 130):
-                raise ValueError(f"Received function code {func} which does not match request")
-            excep = response.exception_code
-            read_type = "coil(s)" if output else "discrete input(s)"
-            logging.error(f"Received MODBUS exception code {excep} when reading "
-                          f"{addresses['count']} {read_type} at {addresses['address']}")
-            return {}
-        for bit in response.bits:
-            if current > end:
-                break
-            elif current in self.map:
-                result[self.map[current]] = bit
-            current += 1
-        return result
+            self.discontinuous_discrete_output_read = True
+            self._log_modbus_exception(addresses['address'], addresses['count'],
+                                             output, response)
+            logging.warning("Fallback to discontinuous reads of discrete outputs may timeout.")
+            result = await self._read_discrete_discontinous(addresses, output)
+            return result
+        else:
+            for bit in response.bits:
+                if current > end:
+                    break
+                elif current in self.map:
+                    result[self.map[current]] = bit
+                current += 1
+            return result
 
     async def _read_registers(self, a_type: str) -> dict:
         """Handle reading input or holding registers from the PLC."""
@@ -370,7 +397,7 @@ class ProductivityPLC(AsyncioModbusClient):
                                  "numat/productivity.")
 
         if 'discrete_output' in output and do_count / 2 < output['discrete_output']['count']:
-            self.discontinuous_discrete_output = True
+            self.discontinuous_discrete_output_write = True
             logging.warning(
                 "Warning: Your tags file has gaps in discrete output modbus addresses."
                 " This driver will fall back to setting values in this range serially "
