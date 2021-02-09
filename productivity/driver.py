@@ -7,6 +7,7 @@ Copyright (C) 2019 NuMat Technologies
 import csv
 import logging
 import pydoc
+from copy import deepcopy
 from math import ceil
 from string import digits
 from typing import Tuple, Union, Optional, List
@@ -16,6 +17,7 @@ from pymodbus.bit_write_message import WriteMultipleCoilsResponse
 from pymodbus.constants import Endian
 from pymodbus.payload import BinaryPayloadBuilder, BinaryPayloadDecoder
 from pymodbus.register_write_message import WriteMultipleRegistersResponse
+from pymodbus.pdu import ExceptionResponse
 
 from productivity.util import AsyncioModbusClient
 
@@ -225,6 +227,15 @@ class ProductivityPLC(AsyncioModbusClient):
             current = addresses['address'] + 100001
 
         end = current + addresses['count']
+        if isinstance(response, ExceptionResponse):
+            func = response.function_code
+            if (output and func != 129) or (output is False and func != 130):
+                raise ValueError(f"Received function code {func} which does not match request")
+            excep = response.exception_code
+            read_type = "coil(s)" if output else "discrete input(s)"
+            logging.error(f"Received MODBUS exception code {excep} when reading "
+                          f"{addresses['count']} {read_type} at {addresses['address']}")
+            return {}
         for bit in response.bits:
             if current > end:
                 break
@@ -251,7 +262,14 @@ class ProductivityPLC(AsyncioModbusClient):
                     current += 2
                 elif data_type == 'str':
                     chars = self.tags[tag]['length']
-                    result[tag] = decoder.decode_string(chars).decode('ascii')
+                    try:
+                        test_decoder = deepcopy(decoder)
+                        test_decoder.decode_string(chars).decode('ascii')
+                        result[tag] = decoder.decode_string(chars).decode('ascii')
+                    except UnicodeDecodeError as e:
+                        result[tag] = decoder.decode_string(chars).decode('ascii', 'ignore')
+                        logging.error(f"Decoding register {current} had an error,"
+                                      f" which was ignored: {e}")
                     # Handle odd length strings
                     current += ceil(chars / 2)
                     decoder._pointer += chars % 2
