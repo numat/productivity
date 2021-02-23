@@ -1,16 +1,18 @@
 """Python driver for AutomationDirect Productivity Series PLCs."""
-from platform import python_version
+from sys import version_info
 from setuptools import setup
 
-if python_version() < '3.5':
-    raise ImportError("This module requires Python >=3.5")
+if version_info < (3, 5):
+    raise ImportError("This module requires Python >=3.5 for asyncio support")
+if version_info >= (3, 10):
+    raise ImportError("This module depends on pymodbus, which is incompatible with Python 3.10")
 
 with open('README.md', 'r') as in_file:
     long_description = in_file.read()
 
 setup(
     name='productivity',
-    version='0.4.2',
+    version='0.4.3',
     description="Python driver for AutomationDirect Productivity Series PLCs.",
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -42,6 +44,8 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'Topic :: Scientific/Engineering :: Human Machine Interfaces'
     ]
 )
