@@ -34,7 +34,7 @@ class AsyncClientMock(MagicMock):
 class ProductivityPLC(realProductivityPLC):
     """Mock Productivity driver using local storage instead of remote communication."""
 
-    @patch('pymodbus.client.asynchronous.asyncio.ReconnectingAsyncioModbusTcpClient')
+    @patch('pymodbus.client.asynchronous.async_io.ReconnectingAsyncioModbusTcpClient')
     def __init__(self, address, tag_filepath, timeout=1, *args, **kwargs):
         super().__init__(address, tag_filepath, timeout)
         self.client = AsyncClientMock()
