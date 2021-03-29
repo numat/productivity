@@ -53,8 +53,8 @@ async def test_get(plc_driver):
     expected = {'AV-101': False, 'AV-102': False, 'toggle_AV-101': False,
                 'toggle_AV-102': False, 'FALL-101_OK': False, 'FAL-101_OK': False,
                 'ESD_OK': False, 'FI-101': 0.0, 'FI-102': 0.0, 'Raw Pressure': 0,
-                'GAS-101': '\x00\x00\x00\x00\x00\x00\x00\x00',
-                'GAS-102': '\x00\x00\x00\x00\x00\x00\x00\x00'}
+                'GAS-101': '',
+                'GAS-102': ''}
     assert await plc_driver.get() == expected
 
 
@@ -67,7 +67,7 @@ async def test_roundtrip(plc_driver):
                 'toggle_AV-102': False, 'FALL-101_OK': False, 'FAL-101_OK': False,
                 'ESD_OK': False, 'FI-101': 20.0, 'FI-102': 0.0,
                 'Raw Pressure': 1, 'GAS-101': 'FOO     ',
-                'GAS-102': '\x00\x00\x00\x00\x00\x00\x00\x00'}
+                'GAS-102': ''}
     assert await plc_driver.get() == expected
 
 

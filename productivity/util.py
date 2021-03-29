@@ -5,7 +5,10 @@ Copyright (C) 2019 NuMat Technologies
 """
 import asyncio
 
-from pymodbus.client.asynchronous.asyncio import ReconnectingAsyncioModbusTcpClient
+try:
+    from pymodbus.client.asynchronous.async_io import ReconnectingAsyncioModbusTcpClient
+except ModuleNotFoundError:
+    from pymodbus.client.asynchronous.asyncio import ReconnectingAsyncioModbusTcpClient
 import pymodbus.exceptions
 
 
