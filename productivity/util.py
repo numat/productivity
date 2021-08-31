@@ -66,10 +66,10 @@ class AsyncioModbusClient(object):
         if type not in self._register_types:
             raise ValueError(f"Register type {type} not in {self._register_types}.")
         registers = []
-        while count > 124:
-            r = await self._request(f'read_{type}_registers', address, 124)
+        while count > 125:
+            r = await self._request(f'read_{type}_registers', address, 125)
             registers += r.registers
-            address, count = address + 124, count - 124
+            address, count = address + 125, count - 125
         r = await self._request(f'read_{type}_registers', address, count)
         registers += r.registers
         return registers
