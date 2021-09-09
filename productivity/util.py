@@ -56,7 +56,7 @@ class AsyncioModbusClient(object):
         """Read modbus discrete inputs (1 address prefix)."""
         return await self._request('read_discrete_inputs', address, count)
 
-    async def read_registers(self, address, count, type='holding'):
+    async def read_registers(self, address, count, type='holding', max_count=125):
         """Read modbus registers.
 
         The Modbus protocol doesn't allow responses longer than 250 bytes
@@ -66,10 +66,10 @@ class AsyncioModbusClient(object):
         if type not in self._register_types:
             raise ValueError(f"Register type {type} not in {self._register_types}.")
         registers = []
-        while count > 125:
-            r = await self._request(f'read_{type}_registers', address, 125)
+        while count > max_count:
+            r = await self._request(f'read_{type}_registers', address, max_count)
             registers += r.registers
-            address, count = address + 125, count - 125
+            address, count = address + max_count, count - max_count
         r = await self._request(f'read_{type}_registers', address, count)
         registers += r.registers
         return registers
