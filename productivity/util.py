@@ -89,6 +89,8 @@ class AsyncioModbusClient(object):
         (ie. 125 registers, 62 DF addresses), which this function manages by
         chunking larger requests.
         """
+        if max_count > 125:
+            raise ValueError("Maximum of 125 registers can be read in one request.")
         if type not in self._register_types:
             raise ValueError(f"Register type {type} not in {self._register_types}.")
         registers = []
