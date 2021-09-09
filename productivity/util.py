@@ -11,6 +11,32 @@ except ModuleNotFoundError:
     from pymodbus.client.asynchronous.asyncio import ReconnectingAsyncioModbusTcpClient
 import pymodbus.exceptions
 
+TYPE_START = {
+    'discrete_output': 0,
+    'discrete_input': 100000,
+    'input': 300000,
+    'holding': 400000,
+}
+
+DATA_TYPES = {
+    'AIF32': 'float',  # Analog Input Float 32-bit
+    'F32': 'float',    # Float 32-bit
+    'AIS32': 'int32',  # Analog Input Signed integer 32-bit
+    'AOS32': 'int32',  # Analog Output Signed integer 32-bit
+    'S16': 'int16',    # Signed integer 16-bit
+    'S32': 'int32',    # Signed integer 32-bit
+    'C': 'bool',       # (C) Boolean
+    'DI': 'bool',      # Discrete Input
+    'DO': 'bool',      # Discrete Output
+    'SBR': 'bool',     # System Boolean Read-only
+    'SBRW': 'bool',    # System Boolean Read-Write
+    'MST': 'bool',     # Module STatus bit
+    'STR': 'str',      # STRing
+    'SSTR': 'str',     # System STRing
+    'SWR': 'int16',    # System Word Read-only
+    'SWRW': 'int16'    # System Word Read-Write
+}
+
 
 class AsyncioModbusClient(object):
     """A generic asyncio client.
@@ -56,20 +82,28 @@ class AsyncioModbusClient(object):
         """Read modbus discrete inputs (1 address prefix)."""
         return await self._request('read_discrete_inputs', address, count)
 
-    async def read_registers(self, address, count, type='holding'):
+    async def read_registers(self, address, count, type='holding', max_count=125):
         """Read modbus registers.
 
         The Modbus protocol doesn't allow responses longer than 250 bytes
         (ie. 125 registers, 62 DF addresses), which this function manages by
         chunking larger requests.
         """
+        if max_count > 125:
+            raise ValueError("Maximum of 125 registers can be read in one request.")
         if type not in self._register_types:
             raise ValueError(f"Register type {type} not in {self._register_types}.")
         registers = []
-        while count > 125:
-            r = await self._request(f'read_{type}_registers', address, 125)
+        while count > max_count:
+            # if the last address read will be in the middle of a 32-bit tag
+            # read one less address to avoid bad replies
+            # https://github.com/numat/productivity/issues/38
+            last_address = self.map.get(TYPE_START[type] + address + max_count, None)
+            offset = -1 if (last_address
+                            and self.tags[last_address]['type'] in ['int32', 'float']) else 0
+            r = await self._request(f'read_{type}_registers', address, max_count + offset)
+            address, count = address + (max_count + offset), count - (max_count + offset)
             registers += r.registers
-            address, count = address + 125, count - 125
         r = await self._request(f'read_{type}_registers', address, count)
         registers += r.registers
         return registers

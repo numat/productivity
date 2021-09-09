@@ -19,31 +19,7 @@ from pymodbus.payload import BinaryPayloadBuilder, BinaryPayloadDecoder
 from pymodbus.register_write_message import WriteMultipleRegistersResponse
 from pymodbus.pdu import ExceptionResponse
 
-from productivity.util import AsyncioModbusClient
-
-data_types = {
-    'AIF32': 'float',  # Analog Input Float 32-bit
-    'F32': 'float',    # Float 32-bit
-    'AIS32': 'int32',  # Analog Input Signed integer 32-bit
-    'AOS32': 'int32',  # Analog Output Signed integer 32-bit
-    'S32': 'int32',    # Signed integer 32-bit
-    'C': 'bool',       # (C) Boolean
-    'DI': 'bool',      # Discrete Input
-    'DO': 'bool',      # Discrete Output
-    'SBR': 'bool',     # System Boolean Read-only
-    'SBRW': 'bool',    # System Boolean Read-Write
-    'MST': 'bool',     # Module STatus bit
-    'STR': 'str',      # STRing
-    'SSTR': 'str',     # System STRing
-    'SWR': 'int16',      # System Word Read-only
-    'SWRW': 'int16'      # System Word Read-Write
-}
-type_start = {
-    'discrete_output': 0,
-    'discrete_input': 100000,
-    'input': 300000,
-    'holding': 400000,
-}
+from productivity.util import AsyncioModbusClient, DATA_TYPES, TYPE_START
 
 
 class ProductivityPLC(AsyncioModbusClient):
@@ -250,7 +226,7 @@ class ProductivityPLC(AsyncioModbusClient):
         decoder = BinaryPayloadDecoder.fromRegisters(r,
                                                      byteorder=Endian.Big,
                                                      wordorder=Endian.Little)
-        current = self.addresses[a_type]['address'] + type_start[a_type] + 1
+        current = self.addresses[a_type]['address'] + TYPE_START[a_type] + 1
         end = current + self.addresses[a_type]['count']
         result = {}
         while current < end:
@@ -311,7 +287,7 @@ class ProductivityPLC(AsyncioModbusClient):
                 'id': row['System ID'],
                 'comment': row['Comment'],
                 'length': int(row['Number of Characters'] or 0),
-                'type': data_types.get(
+                'type': DATA_TYPES.get(
                     row.get('Data Type', row['System ID'].split('-')[0])
                 )
             }
@@ -358,10 +334,10 @@ class ProductivityPLC(AsyncioModbusClient):
             else:
                 continue
             if a_type in output:
-                output[a_type]['count'] = (a - type_start[a_type]
+                output[a_type]['count'] = (a - TYPE_START[a_type]
                                            - output[a_type]['address'])
             else:
-                output[a_type] = {'address': a - type_start[a_type] - 1}
+                output[a_type] = {'address': a - TYPE_START[a_type] - 1}
 
         for found_type in output:
             if output[found_type]['count'] > 2000:

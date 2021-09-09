@@ -43,6 +43,8 @@ def test_get_tags(plc_driver):
                     'comment': 'Base gas', 'length': 8, 'type': 'str'},
         'Raw Pressure': {'address': {'end': 400028, 'start': 400027}, 'type': 'int32',
                          'comment': 'Analog Pressure', 'id': 'AIS32-000001'},
+        'TI-101': {'address': {'end': 400029, 'start': 400029}, 'type': 'int16',
+                   'comment': 'Temperature', 'id': 'S16-000001'},
     }
     assert plc_driver.get_tags() == expected
 
@@ -53,8 +55,7 @@ async def test_get(plc_driver):
     expected = {'AV-101': False, 'AV-102': False, 'toggle_AV-101': False,
                 'toggle_AV-102': False, 'FALL-101_OK': False, 'FAL-101_OK': False,
                 'ESD_OK': False, 'FI-101': 0.0, 'FI-102': 0.0, 'Raw Pressure': 0,
-                'GAS-101': '',
-                'GAS-102': ''}
+                'GAS-101': '', 'GAS-102': '', 'TI-101': 0}
     assert await plc_driver.get() == expected
 
 
@@ -66,8 +67,8 @@ async def test_roundtrip(plc_driver):
     expected = {'AV-101': True, 'AV-102': False, 'toggle_AV-101': True,
                 'toggle_AV-102': False, 'FALL-101_OK': False, 'FAL-101_OK': False,
                 'ESD_OK': False, 'FI-101': 20.0, 'FI-102': 0.0,
-                'Raw Pressure': 1, 'GAS-101': 'FOO     ',
-                'GAS-102': ''}
+                'Raw Pressure': 1, 'GAS-101': 'FOO     ', 'GAS-102': '',
+                'TI-101': 0}
     assert await plc_driver.get() == expected
 
 
@@ -95,3 +96,5 @@ async def test_type_checking(plc_driver):
         await plc_driver.set({'FI-101': 'FOO'})
     with pytest.raises(ValueError, match='Expected GAS-101 to be a str'):
         await plc_driver.set({'GAS-101': 1})
+    with pytest.raises(ValueError, match='Expected TI-101 to be a int'):
+        await plc_driver.set({'TI-101': 1.0})
