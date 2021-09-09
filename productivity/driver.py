@@ -19,7 +19,7 @@ from pymodbus.payload import BinaryPayloadBuilder, BinaryPayloadDecoder
 from pymodbus.register_write_message import WriteMultipleRegistersResponse
 from pymodbus.pdu import ExceptionResponse
 
-from productivity.util import AsyncioModbusClient
+from productivity.util import AsyncioModbusClient, type_start
 
 data_types = {
     'AIF32': 'float',  # Analog Input Float 32-bit
@@ -38,13 +38,6 @@ data_types = {
     'SWR': 'int16',      # System Word Read-only
     'SWRW': 'int16'      # System Word Read-Write
 }
-type_start = {
-    'discrete_output': 0,
-    'discrete_input': 100000,
-    'input': 300000,
-    'holding': 400000,
-}
-
 
 class ProductivityPLC(AsyncioModbusClient):
     """Driver for AutomationDirect Productivity Series PLCs.

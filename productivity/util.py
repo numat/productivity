@@ -11,6 +11,13 @@ except ModuleNotFoundError:
     from pymodbus.client.asynchronous.asyncio import ReconnectingAsyncioModbusTcpClient
 import pymodbus.exceptions
 
+type_start = {
+    'discrete_output': 0,
+    'discrete_input': 100000,
+    'input': 300000,
+    'holding': 400000,
+}
+
 
 class AsyncioModbusClient(object):
     """A generic asyncio client.
@@ -67,9 +74,15 @@ class AsyncioModbusClient(object):
             raise ValueError(f"Register type {type} not in {self._register_types}.")
         registers = []
         while count > max_count:
-            r = await self._request(f'read_{type}_registers', address, max_count)
+            # if the last address read will be in the middle of a 32-bit tag
+            # read one less address to avoid bad replies
+            # https://github.com/numat/productivity/issues/38
+            last_address = self.map.get(type_start[type] + address + max_count, None)
+            offset = -1 if (last_address
+                            and self.tags[last_address]['type'] in ['int32', 'float']) else 0
+            r = await self._request(f'read_{type}_registers', address, max_count + offset)
+            address, count = address + (max_count + offset), count - (max_count + offset)
             registers += r.registers
-            address, count = address + max_count, count - max_count
         r = await self._request(f'read_{type}_registers', address, count)
         registers += r.registers
         return registers
