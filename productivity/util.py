@@ -23,6 +23,7 @@ DATA_TYPES = {
     'F32': 'float',    # Float 32-bit
     'AIS32': 'int32',  # Analog Input Signed integer 32-bit
     'AOS32': 'int32',  # Analog Output Signed integer 32-bit
+    'S16': 'int16',    # Signed integer 16-bit
     'S32': 'int32',    # Signed integer 32-bit
     'C': 'bool',       # (C) Boolean
     'DI': 'bool',      # Discrete Input
