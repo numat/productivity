@@ -58,7 +58,6 @@ class AsyncioModbusClient(object):
         self.lock = asyncio.Lock()
         asyncio.create_task(self._connect())
         self.open = False
-        self.waiting = False
 
     async def __aenter__(self):
         """Asynchronously connect with the context manager."""
@@ -153,29 +152,22 @@ class AsyncioModbusClient(object):
         exist, other logic will have to be added to either prevent or manage
         race conditions.
         """
-        while self.waiting:
-            await asyncio.sleep(0.1)
-        if not self.client.connected or not self.open:
-            raise TimeoutError("Not connected to PLC.")
-        try:
+        async with self.lock:
+            if not self.client.connected or not self.open:
+                raise TimeoutError("Not connected to PLC.")
             future = getattr(self.client.protocol, method)(*args, **kwargs)
-        except TimeoutError:
-            raise TimeoutError("Not connected to PLC.")
-        self.waiting = True
-        try:
-            return await asyncio.wait_for(future, timeout=self.timeout)
-        except asyncio.TimeoutError as e:
-            if self.open:
-                # This came from reading through the pymodbus@python3 source
-                # Problem was that the driver was not detecting disconnect
-                if hasattr(self, 'modbus'):
-                    self.client.protocol_lost_connection(self.modbus)
-                self.open = False
-            raise TimeoutError(e)
-        except pymodbus.exceptions.ConnectionException as e:
-            raise ConnectionError(e)
-        finally:
-            self.waiting = False
+            try:
+                return await asyncio.wait_for(future, timeout=self.timeout)
+            except asyncio.TimeoutError as e:
+                if self.open:
+                    # This came from reading through the pymodbus@python3 source
+                    # Problem was that the driver was not detecting disconnect
+                    if hasattr(self, 'modbus'):
+                        self.client.protocol_lost_connection(self.modbus)
+                    self.open = False
+                raise TimeoutError(e)
+            except pymodbus.exceptions.ConnectionException as e:
+                raise ConnectionError(e)
 
     async def close(self):
         """Close the TCP connection."""
@@ -184,4 +176,3 @@ class AsyncioModbusClient(object):
         except AttributeError:
             self.client.stop()  # 2.4.x - 2.5.x
         self.open = False
-        self.waiting = False
