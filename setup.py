@@ -12,7 +12,7 @@ with open('README.md', 'r') as in_file:
 
 setup(
     name='productivity',
-    version='0.7.0',
+    version='0.7.1',
     description="Python driver for AutomationDirect Productivity Series PLCs.",
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -24,7 +24,7 @@ setup(
         'console_scripts': [('productivity = productivity:command_line')]
     },
     install_requires=[
-        'pymodbus>=2.4.0',
+        'pymodbus>=2.4.0,<3',
         'PyYAML',
     ],
     extras_require={
