@@ -2,8 +2,6 @@
 from sys import version_info
 from setuptools import setup
 
-if version_info < (3, 6):
-    raise ImportError("This module requires Python >=3.6 for asyncio support")
 if version_info < (3, 7):
     raise ImportError("This module requires Python >=3.7.  Use 0.6.0 for Python3.6")
 
@@ -12,7 +10,7 @@ with open('README.md', 'r') as in_file:
 
 setup(
     name='productivity',
-    version='0.7.1',
+    version='0.8.0',
     description="Python driver for AutomationDirect Productivity Series PLCs.",
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -24,7 +22,10 @@ setup(
         'console_scripts': [('productivity = productivity:command_line')]
     },
     install_requires=[
-        'pymodbus>=2.4.0,<3',
+        'pymodbus>=2.4.0,<3; python_version == "3.7"',
+        'pymodbus[serial]>=2.4.0; python_version == "3.8"',
+        'pymodbus[serial]>=2.4.0; python_version == "3.9"',
+        'pymodbus[serial]>=3.0.0; python_version >= "3.10"',
         'PyYAML',
     ],
     extras_require={

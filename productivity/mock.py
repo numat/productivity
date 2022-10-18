@@ -4,7 +4,7 @@ Python mock driver for AutomationDirect Productivity Series PLCs.
 Uses local storage instead of remote communications.
 
 Distributed under the GNU General Public License v2
-Copyright (C) 2020 NuMat Technologies
+Copyright (C) 2022 NuMat Technologies
 """
 
 from collections import defaultdict
@@ -26,15 +26,10 @@ class AsyncClientMock(MagicMock):
         """Convert regular mocks into into an async coroutine."""
         return super().__call__(*args, **kwargs)
 
-    def stop(self):
-        """Overide 'stop' as it is the one non-async method in the client."""
-        pass
-
-
 class ProductivityPLC(realProductivityPLC):
     """Mock Productivity driver using local storage instead of remote communication."""
 
-    @patch('pymodbus.client.asynchronous.async_io.ReconnectingAsyncioModbusTcpClient')
+    @patch('pymodbus.client.AsyncModbusTcpClient')
     def __init__(self, address, tag_filepath, timeout=1, *args, **kwargs):
         super().__init__(address, tag_filepath, timeout)
         self.client = AsyncClientMock()

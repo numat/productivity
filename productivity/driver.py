@@ -2,7 +2,7 @@
 Python driver for AutomationDirect Productivity Series PLCs.
 
 Distributed under the GNU General Public License v2
-Copyright (C) 2019 NuMat Technologies
+Copyright (C) 2022 NuMat Technologies
 """
 import csv
 import logging
