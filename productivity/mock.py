@@ -8,7 +8,7 @@ Copyright (C) 2022 NuMat Technologies
 """
 
 from collections import defaultdict
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from pymodbus.bit_read_message import ReadCoilsResponse, ReadDiscreteInputsResponse
 from pymodbus.bit_write_message import WriteSingleCoilResponse, WriteMultipleCoilsResponse
@@ -26,12 +26,15 @@ class AsyncClientMock(MagicMock):
         """Convert regular mocks into into an async coroutine."""
         return super().__call__(*args, **kwargs)
 
+
 class ProductivityPLC(realProductivityPLC):
     """Mock Productivity driver using local storage instead of remote communication."""
 
-    @patch('pymodbus.client.AsyncModbusTcpClient')
     def __init__(self, address, tag_filepath, timeout=1, *args, **kwargs):
-        super().__init__(address, tag_filepath, timeout)
+        self.discontinuous_discrete_output = False
+        self.tags = self._load_tags(tag_filepath)
+        self.addresses = self._calculate_addresses(self.tags)
+        self.map = {data['address']['start']: tag for tag, data in self.tags.items()}
         self.client = AsyncClientMock()
         self._coils = defaultdict(bool)
         self._discrete_inputs = defaultdict(bool)
