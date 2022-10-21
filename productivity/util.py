@@ -56,12 +56,11 @@ class AsyncioModbusClient(object):
         except NameError:
             self.client = ReconnectingAsyncioModbusTcpClient()  # 2.4.x - 2.5.x
         self.lock = asyncio.Lock()
-        asyncio.create_task(self._connect())
+        self.connectTask = asyncio.create_task(self._connect())
         self.open = False
 
     async def __aenter__(self):
         """Asynchronously connect with the context manager."""
-        await self._connect()
         return self
 
     async def __aexit__(self, *args):
@@ -152,6 +151,7 @@ class AsyncioModbusClient(object):
         exist, other logic will have to be added to either prevent or manage
         race conditions.
         """
+        await self.connectTask
         async with self.lock:
             if not self.client.connected or not self.open:
                 raise TimeoutError("Not connected to PLC.")
