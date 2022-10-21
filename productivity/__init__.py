@@ -12,6 +12,7 @@ def command_line():
     import argparse
     import asyncio
     import json
+
     import yaml
 
     parser = argparse.ArgumentParser(description="Control a Productivity PLC "
