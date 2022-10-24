@@ -65,7 +65,7 @@ class AsyncioModbusClient(object):
 
     async def __aexit__(self, *args):
         """Provide exit to the context manager."""
-        await self.close()
+        await self._close()
 
     async def _connect(self):
         """Start asynchronous reconnect loop."""
@@ -169,7 +169,7 @@ class AsyncioModbusClient(object):
             except pymodbus.exceptions.ConnectionException as e:
                 raise ConnectionError(e)
 
-    async def close(self):
+    async def _close(self):
         """Close the TCP connection."""
         try:
             await self.client.close()  # 3.x
