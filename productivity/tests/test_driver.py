@@ -30,6 +30,7 @@ def test_driver_cli_tags(capsys):
     with pytest.raises(SystemExit):
         command_line(['fakeip', 'tags', 'bogus'])
 
+
 def test_get_tags(plc_driver):
     """Confirm the driver returns the tags defined in the tags file."""
     expected = {
