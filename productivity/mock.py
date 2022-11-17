@@ -4,17 +4,19 @@ Python mock driver for AutomationDirect Productivity Series PLCs.
 Uses local storage instead of remote communications.
 
 Distributed under the GNU General Public License v2
-Copyright (C) 2020 NuMat Technologies
+Copyright (C) 2022 NuMat Technologies
 """
 
 from collections import defaultdict
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
-from pymodbus.bit_read_message import ReadCoilsResponse, ReadDiscreteInputsResponse
-from pymodbus.bit_write_message import WriteSingleCoilResponse, WriteMultipleCoilsResponse
+from pymodbus.bit_read_message import (ReadCoilsResponse,
+                                       ReadDiscreteInputsResponse)
+from pymodbus.bit_write_message import (WriteMultipleCoilsResponse,
+                                        WriteSingleCoilResponse)
 from pymodbus.register_read_message import ReadHoldingRegistersResponse
-from pymodbus.register_write_message import WriteSingleRegisterResponse
-from pymodbus.register_write_message import WriteMultipleRegistersResponse
+from pymodbus.register_write_message import (WriteMultipleRegistersResponse,
+                                             WriteSingleRegisterResponse)
 
 from productivity.driver import ProductivityPLC as realProductivityPLC
 
@@ -26,17 +28,15 @@ class AsyncClientMock(MagicMock):
         """Convert regular mocks into into an async coroutine."""
         return super().__call__(*args, **kwargs)
 
-    def stop(self):
-        """Overide 'stop' as it is the one non-async method in the client."""
-        pass
-
 
 class ProductivityPLC(realProductivityPLC):
     """Mock Productivity driver using local storage instead of remote communication."""
 
-    @patch('pymodbus.client.asynchronous.async_io.ReconnectingAsyncioModbusTcpClient')
     def __init__(self, address, tag_filepath, timeout=1, *args, **kwargs):
-        super().__init__(address, tag_filepath, timeout)
+        self.discontinuous_discrete_output = False
+        self.tags = self._load_tags(tag_filepath)
+        self.addresses = self._calculate_addresses(self.tags)
+        self.map = {data['address']['start']: tag for tag, data in self.tags.items()}
         self.client = AsyncClientMock()
         self._coils = defaultdict(bool)
         self._discrete_inputs = defaultdict(bool)

@@ -2,7 +2,7 @@
 Python driver for AutomationDirect Productivity Series PLCs.
 
 Distributed under the GNU General Public License v2
-Copyright (C) 2019 NuMat Technologies
+Copyright (C) 2022 NuMat Technologies
 """
 import csv
 import logging
@@ -10,16 +10,16 @@ import pydoc
 from copy import deepcopy
 from math import ceil
 from string import digits
-from typing import Tuple, Union, Optional, List
+from typing import List, Optional, Tuple, Union
 
-from pymodbus.bit_write_message import WriteSingleCoilResponse
-from pymodbus.bit_write_message import WriteMultipleCoilsResponse
+from pymodbus.bit_write_message import (WriteMultipleCoilsResponse,
+                                        WriteSingleCoilResponse)
 from pymodbus.constants import Endian
 from pymodbus.payload import BinaryPayloadBuilder, BinaryPayloadDecoder
-from pymodbus.register_write_message import WriteMultipleRegistersResponse
 from pymodbus.pdu import ExceptionResponse
+from pymodbus.register_write_message import WriteMultipleRegistersResponse
 
-from productivity.util import AsyncioModbusClient, DATA_TYPES, TYPE_START
+from productivity.util import DATA_TYPES, TYPE_START, AsyncioModbusClient
 
 
 class ProductivityPLC(AsyncioModbusClient):

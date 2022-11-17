@@ -1,6 +1,9 @@
 """Test the driver correctly parses a tags file and responds with correct data."""
+from unittest import mock
+
 import pytest
 
+from productivity import command_line
 from productivity.mock import ProductivityPLC
 
 
@@ -14,6 +17,18 @@ def test_init():
     """Confirm the driver detects an improper tags file."""
     with pytest.raises(TypeError, match='unsupported data type'):
         ProductivityPLC('fake ip', 'tests/bad_tags.csv')
+
+
+@mock.patch('productivity.ProductivityPLC', ProductivityPLC)
+def test_driver_cli_tags(capsys):
+    """Confirm the commandline interface works with a tags file."""
+    command_line(['fakeip', 'tests/plc_tags.csv'])
+    captured = capsys.readouterr()
+    assert 'AV-101' in captured.out
+    assert 'GAS-101' in captured.out
+    assert 'TI-101' in captured.out
+    with pytest.raises(SystemExit):
+        command_line(['fakeip', 'tags', 'bogus'])
 
 
 def test_get_tags(plc_driver):
