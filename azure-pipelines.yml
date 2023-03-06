@@ -38,7 +38,7 @@ steps:
   displayName: 'Lint Code'
 
 - script: |
-    mypy clickplc
+    mypy productivity
   displayName: 'Check types with mypy'
 
 - script: |
