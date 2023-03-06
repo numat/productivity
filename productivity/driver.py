@@ -128,9 +128,9 @@ class ProductivityPLC(AsyncioModbusClient):
         for key, value in to_write.items():
             start_address = self.tags[key]['address']['start']
             data_type = self.tags[key]['type'].rstrip(digits)
-            if isinstance(value, int) and data_type == 'float':
+            if type(value) == int and data_type == 'float':
                 value = float(value)
-            if not isinstance(value, pydoc.locate(data_type)):
+            if type(value) != pydoc.locate(data_type):
                 raise ValueError(f"Expected {key} to be a {data_type}.")
             if 0 <= start_address < 65536:
                 discrete_to_write[key] = value
@@ -155,7 +155,7 @@ class ProductivityPLC(AsyncioModbusClient):
         data_type = self.tags[key]['type']
         if data_type == 'float':
             builder.add_32bit_float(value)
-        elif data_type == 'str':
+        elif data_type == 'str' and isinstance(value, str):
             chars = self.tags[key]['length']
             if len(value) > chars:
                 raise ValueError(f'{value} is too long for {key}. '
