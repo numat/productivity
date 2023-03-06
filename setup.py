@@ -30,9 +30,13 @@ setup(
     ],
     extras_require={
         'test': [
+            'flake8>=3,<7',
+            'flake8-docstrings==1.*',
+            'mypy==1.0.1',
             'pytest',
             'pytest-cov',
             'pytest-asyncio',
+            'types-PyYAML'
         ],
     },
     license='GPLv2',
