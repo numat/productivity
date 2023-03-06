@@ -22,10 +22,7 @@ setup(
         'console_scripts': [('productivity = productivity:command_line')]
     },
     install_requires=[
-        'pymodbus>=2.4.0,<3; python_version == "3.7"',
-        'pymodbus>=2.4.0; python_version == "3.8"',
-        'pymodbus>=2.4.0; python_version == "3.9"',
-        'pymodbus>=3.0.2,<3.3.0; python_version >= "3.10"',
+        'pymodbus @ git+ssh://git@github.com/pymodbus-dev/pymodbus@97ffffc9e7dc164161dae936782c49d7dae8a7de#egg=pymodbus',
         'PyYAML',
     ],
     extras_require={
