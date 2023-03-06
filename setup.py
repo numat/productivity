@@ -36,6 +36,7 @@ setup(
             'pytest',
             'pytest-cov',
             'pytest-asyncio',
+            'types-PyYAML'
         ],
     },
     license='GPLv2',
