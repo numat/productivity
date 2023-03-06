@@ -30,6 +30,7 @@ setup(
     ],
     extras_require={
         'test': [
+            'mypy==1.0.1',
             'pytest',
             'pytest-cov',
             'pytest-asyncio',
