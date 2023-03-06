@@ -10,7 +10,7 @@ import pydoc
 from copy import deepcopy
 from math import ceil
 from string import digits
-from typing import List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pymodbus.bit_write_message import (WriteMultipleCoilsResponse,
                                         WriteSingleCoilResponse)
@@ -75,8 +75,8 @@ class ProductivityPLC(AsyncioModbusClient):
         """
         return self.tags
 
-    async def set(self, data_dict: dict = None, *args, **kwargs
-                  ) -> List[Union[WriteSingleCoilResponse, WriteMultipleCoilsResponse]]:
+    async def set(self, data_dict: Optional[dict] = None, *args, **kwargs
+                  ) -> List[str]:
         """Set tag names to values.
 
         This function expects a dictionary of values or keyword arguments.
@@ -93,19 +93,19 @@ class ProductivityPLC(AsyncioModbusClient):
         discrete_to_write, registers_to_write = await self._parse_set_args(data_dict,
                                                                            args, kwargs)
 
-        responses = []
+        responses: List[str] = []
         if discrete_to_write:
-            resp = await self._write_discrete_values(discrete_to_write)
-            if any(r.isError() for r in resp):
-                raise RuntimeError(f"Setting discrete values failed: {str(resp)}")
-            responses.extend(str(r) for r in resp)
+            discrete_resp = await self._write_discrete_values(discrete_to_write)
+            if any(r.isError() for r in discrete_resp):
+                raise RuntimeError(f"Setting discrete values failed: {str(discrete_resp)}")
+            responses.extend(str(r) for r in discrete_resp)
 
         if registers_to_write:
             for key, value in registers_to_write.items():
-                resp = await self._write_register_value(key, value)
-                if resp.isError():
-                    raise RuntimeError(f"Setting {key} failed: {str(resp)}")
-                responses.append(str(resp))
+                register_resp = await self._write_register_value(key, value)
+                if register_resp.isError():
+                    raise RuntimeError(f"Setting {key} failed: {str(register_resp)}")
+                responses.append(str(register_resp))
         return responses
 
     async def _parse_set_args(self, data_dict: Optional[dict],
@@ -278,7 +278,7 @@ class ProductivityPLC(AsyncioModbusClient):
         with open(tag_filepath) as csv_file:
             csv_data = csv_file.read().splitlines()
         csv_data[0] = csv_data[0].lstrip('## ')
-        parsed = {
+        parsed: Dict[str, Dict[str, Any]] = {
             row['Tag Name']: {
                 'address': {
                     'start': int(row['MODBUS Start Address']),
@@ -319,7 +319,7 @@ class ProductivityPLC(AsyncioModbusClient):
         """
         addresses = sorted([tag['address']['start'] for tag in tags.values()]
                            + [tag['address']['end'] for tag in tags.values()])
-        output = {}
+        output: Dict[str, dict] = {}
         do_count = 0
         for a in addresses:
             if 0 < a < 65536:
