@@ -34,8 +34,8 @@ steps:
   displayName: 'Install dependencies'
 
 - script: |
-    flake8 productivity
-  displayName: 'Lint Code'
+    ruff .
+  displayName: 'Lint code with ruff'
 
 - script: |
     mypy productivity

@@ -30,12 +30,11 @@ setup(
     ],
     extras_require={
         'test': [
-            'flake8>=3,<7',
-            'flake8-docstrings==1.*',
             'mypy==1.1.1',
             'pytest',
             'pytest-cov',
             'pytest-asyncio',
+            'ruff==0.0.261',
             'types-PyYAML'
         ],
     },
