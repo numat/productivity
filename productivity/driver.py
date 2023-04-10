@@ -119,7 +119,7 @@ class ProductivityPLC(AsyncioModbusClient):
         if not kwargs:
             raise TypeError(f"No settings provided. See the following docstring:\n"
                             f"{self.set.__doc__}")
-        to_write = {key: value for key, value in kwargs.items()}
+        to_write = dict(kwargs.items())
         unsupported = set(to_write) - set(self.tags)
         if unsupported:
             raise ValueError(f"The tags file is missing the following tags:"
