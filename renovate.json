@@ -2,5 +2,5 @@
   "extends": [
     "config:base"
   ],
-  "timezone": "America/Chicago",
+  "timezone": "America/Chicago"
 }
