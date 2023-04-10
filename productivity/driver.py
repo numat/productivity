@@ -12,8 +12,7 @@ from math import ceil
 from string import digits
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from pymodbus.bit_write_message import (WriteMultipleCoilsResponse,
-                                        WriteSingleCoilResponse)
+from pymodbus.bit_write_message import WriteMultipleCoilsResponse, WriteSingleCoilResponse
 from pymodbus.constants import Endian
 from pymodbus.payload import BinaryPayloadBuilder, BinaryPayloadDecoder
 from pymodbus.pdu import ExceptionResponse

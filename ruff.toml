@@ -7,11 +7,10 @@ ignore = [
     "UP036",
 ]
 exclude = ["venv*"]
-select = ["C", "E", "F", "UP", "YTT", "W"]
+select = ["C", "E", "F", "I", "UP", "YTT", "W"]
 # "SIM" flake-simplify
 # "ARG" flake8-unused args
 # "B" bandit
-# "I" isort conflicts with isort config
 # "RUF" ruff base config
 target-version = "py38"
 [pydocstyle]
