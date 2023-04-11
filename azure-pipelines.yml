@@ -42,8 +42,7 @@ steps:
   displayName: 'Check types with mypy'
 
 - script: |
-    cd productivity
-    pytest --junitxml=../reports/test-coverage.xml  --cov=. --cov-report=xml
+    pytest --junitxml=reports/test-coverage.xml  --cov=. --cov-report=xml
   env:
     USER_TOKEN: $(USER_TOKEN)
   displayName: 'Run tests'

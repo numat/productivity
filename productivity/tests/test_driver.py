@@ -10,19 +10,19 @@ from productivity.mock import ProductivityPLC
 @pytest.fixture
 def plc_driver():
     """Confirm the driver correctly initializes with a good tags file."""
-    return ProductivityPLC('fake ip', 'tests/plc_tags.csv')
+    return ProductivityPLC('fake ip', 'productivity/tests/plc_tags.csv')
 
 
 def test_init():
     """Confirm the driver detects an improper tags file."""
     with pytest.raises(TypeError, match='unsupported data type'):
-        ProductivityPLC('fake ip', 'tests/bad_tags.csv')
+        ProductivityPLC('fake ip', 'productivity/tests/bad_tags.csv')
 
 
 @mock.patch('productivity.ProductivityPLC', ProductivityPLC)
 def test_driver_cli_tags(capsys):
     """Confirm the commandline interface works with a tags file."""
-    command_line(['fakeip', 'tests/plc_tags.csv'])
+    command_line(['fakeip', 'productivity/tests/plc_tags.csv'])
     captured = capsys.readouterr()
     assert 'AV-101' in captured.out
     assert 'GAS-101' in captured.out
