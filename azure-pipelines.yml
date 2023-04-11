@@ -46,8 +46,3 @@ steps:
   env:
     USER_TOKEN: $(USER_TOKEN)
   displayName: 'Run tests'
-
-- task: PublishCodeCoverageResults@1
-  inputs:
-    codeCoverageTool: Cobertura
-    summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
