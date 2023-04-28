@@ -5,13 +5,26 @@ ignore = [
     "D107",
     "C901",
     "UP036",
+    "PT001",  # Use `@pytest.fixture()` over `@pytest.fixture`
+    "PT023",  # Use `@pytest.mark.asyncio()` over `@pytest.mark.asyncio`
+    "SIM108",
 ]
 exclude = ["venv*"]
-select = ["C", "E", "F", "I", "UP", "YTT", "W"]
-# "SIM" flake-simplify
-# "ARG" flake8-unused args
-# "B" bandit
-# "RUF" ruff base config
+select = [
+    # "B",   # bandit
+    "C",   # complexity
+    "D",   # docstrings
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort
+    "PT",  # flake8-pytest
+    "RUF", # ruff base config
+    "SIM", # flake-simplify
+    "UP",  # pyupgrade
+    "W",   # pycodestyle warnings
+    "YTT", # flake8-2020
+    # "ARG", # flake8-unused args
+]
 target-version = "py38"
 [pydocstyle]
 convention = "pep257"
