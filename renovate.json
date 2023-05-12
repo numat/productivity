@@ -16,6 +16,10 @@
     {
       "matchPackagePatterns": ["mypy", "pre-commit", "ruff"],
       "automerge": true
+    },
+    {
+      "matchPackagePatterns": ["ruff"],
+      "groupName": "ruff"
     }
   ]
 }
