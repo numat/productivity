@@ -96,14 +96,14 @@ class ProductivityPLC(AsyncioModbusClient):
         if discrete_to_write:
             discrete_resp = await self._write_discrete_values(discrete_to_write)
             if any(r.isError() for r in discrete_resp):
-                raise RuntimeError(f"Setting discrete values failed: {str(discrete_resp)}")
+                raise RuntimeError(f"Setting discrete values failed: {discrete_resp!s}")
             responses.extend(str(r) for r in discrete_resp)
 
         if registers_to_write:
             for key, value in registers_to_write.items():
                 register_resp = await self._write_register_value(key, value)
                 if register_resp.isError():
-                    raise RuntimeError(f"Setting {key} failed: {str(register_resp)}")
+                    raise RuntimeError(f"Setting {key} failed: {register_resp!s}")
                 responses.append(str(register_resp))
         return responses
 
