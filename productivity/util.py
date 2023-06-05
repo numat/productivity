@@ -51,11 +51,11 @@ class AsyncioModbusClient:
         """Set up communication parameters."""
         self.ip = address
         self.timeout = timeout
-        try:
-            self.client = AsyncModbusTcpClient(address, timeout=timeout)  # 3.0
-            self.pymodbus32plus = not hasattr(self.client, 'protocol')  # >= 3.2.0
-        except NameError:
-            self.client = ReconnectingAsyncioModbusTcpClient()  # 2.4.x - 2.5.x
+        self._detect_pymodbus_version()
+        if self.pymodbus30plus:
+            self.client = AsyncModbusTcpClient(address, timeout=timeout)
+        else:  # 2.x
+            self.client = ReconnectingAsyncioModbusTcpClient()
         self.lock = asyncio.Lock()
         self.connectTask = asyncio.create_task(self._connect())
         self.open = False
@@ -68,13 +68,18 @@ class AsyncioModbusClient:
         """Provide exit to the context manager."""
         await self._close()
 
+    def _detect_pymodbus_version(self) -> None:
+        self.pymodbus30plus = int(pymodbus.__version__[0]) == 3
+        self.pymodbus32plus = self.pymodbus30plus and int(pymodbus.__version__[2]) >= 2
+        self.pymodbus33plus = self.pymodbus30plus and int(pymodbus.__version__[2]) >= 3
+
     async def _connect(self):
         """Start asynchronous reconnect loop."""
         async with self.lock:
             try:
-                try:
+                if self.pymodbus30plus:
                     await asyncio.wait_for(self.client.connect(), timeout=self.timeout)  # 3.x
-                except AttributeError:  # 2.4.x - 2.5.x
+                else:  # 2.4.x - 2.5.x
                     await self.client.start(self.ip)  # type: ignore
                 self.open = True
             except Exception:
@@ -164,10 +169,12 @@ class AsyncioModbusClient:
             except (asyncio.TimeoutError, pymodbus.exceptions.ConnectionException):
                 raise TimeoutError("Not connected to PLC.")
 
-    async def _close(self):
+    async def _close(self) -> None:
         """Close the TCP connection."""
-        try:
-            await self.client.close()  # 3.x
-        except AttributeError:  # 2.4.x - 2.5.x
+        if self.pymodbus33plus:
+            self.client.close()  # 3.3.x
+        elif self.pymodbus30plus:
+            await self.client.close()  # type: ignore  # 3.0.x - 3.2.x
+        else:  # 2.4.x - 2.5.x
             self.client.stop()  # type: ignore
         self.open = False
