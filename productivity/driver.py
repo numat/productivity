@@ -153,7 +153,7 @@ class ProductivityPLC(AsyncioModbusClient):
                                        wordorder=Endian.Little)
         data_type = self.tags[key]['type']
         if data_type == 'float':
-            builder.add_32bit_float(value)
+            builder.add_32bit_float(float(value))
         elif data_type == 'str' and isinstance(value, str):
             chars = self.tags[key]['length']
             if len(value) > chars:
@@ -161,9 +161,9 @@ class ProductivityPLC(AsyncioModbusClient):
                                  f'Max: {chars} chars')
             builder.add_string(value.ljust(chars))
         elif data_type == 'int16':
-            builder.add_16bit_int(value)
+            builder.add_16bit_int(int(value))
         elif data_type == 'int32':
-            builder.add_32bit_int(value)
+            builder.add_32bit_int(int(value))
         else:
             raise ValueError("Missing data type.")
         resp = await self.write_registers(start_address,
