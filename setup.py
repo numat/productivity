@@ -11,13 +11,15 @@ with open('README.md') as in_file:
 
 setup(
     name='productivity',
-    version='0.9.0',
+    version='0.9.1',
     description="Python driver for AutomationDirect Productivity Series PLCs.",
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='http://github.com/numat/productivity/',
+    url='https://github.com/numat/productivity/',
     author='Patrick Fuller',
     author_email='pat@numat-tech.com',
+    maintainer="Alex Ruddick",
+    maintainer_email="alex@numat-tech.com",
     packages=['productivity'],
     entry_points={
         'console_scripts': [('productivity = productivity:command_line')]
