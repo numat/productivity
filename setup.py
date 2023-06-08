@@ -37,7 +37,7 @@ setup(
             'pytest',
             'pytest-cov',
             'pytest-asyncio',
-            'ruff==0.0.271',
+            'ruff==0.0.272',
             'types-PyYAML'
         ],
     },
