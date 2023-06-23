@@ -108,10 +108,9 @@ class AsyncioModbusClient:
             # if the last address read will be in the middle of a 32-bit tag
             # read one less address to avoid bad replies
             # https://github.com/numat/productivity/issues/38
-            last_address = self.map.get(TYPE_START[type] + address + max_count,  # type: ignore
-                                        None)
-            last_type = self.tags[last_address]['type']   # type: ignore
-            offset = -1 if (last_address and last_type in ['int32', 'float']) else 0
+            last_address = self.map.get(TYPE_START[type] + address + max_count, None)  # type: ignore
+            offset = -1 if (last_address
+                            and self.tags[last_address]['type'] in ['int32', 'float']) else 0  # type: ignore
             r = await self._request(f'read_{type}_registers', address, max_count + offset)
             address, count = address + (max_count + offset), count - (max_count + offset)
             registers += r.registers
