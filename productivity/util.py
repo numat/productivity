@@ -57,7 +57,6 @@ class AsyncioModbusClient:
             self.client = ReconnectingAsyncioModbusTcpClient()
         self.lock = asyncio.Lock()
         self.connectTask = asyncio.create_task(self._connect())
-        self.open = False
 
     async def __aenter__(self):
         """Asynchronously connect with the context manager."""
@@ -68,6 +67,7 @@ class AsyncioModbusClient:
         await self._close()
 
     def _detect_pymodbus_version(self) -> None:
+        """Detect various pymodbus versions."""
         self.pymodbus30plus = int(pymodbus.__version__[0]) == 3
         self.pymodbus32plus = self.pymodbus30plus and int(pymodbus.__version__[2]) >= 2
         self.pymodbus33plus = self.pymodbus30plus and int(pymodbus.__version__[2]) >= 3
@@ -80,7 +80,6 @@ class AsyncioModbusClient:
                     await asyncio.wait_for(self.client.connect(), timeout=self.timeout)  # 3.x
                 else:  # 2.4.x - 2.5.x
                     await self.client.start(self.ip)  # type: ignore
-                self.open = True
             except Exception:
                 raise OSError(f"Could not connect to '{self.ip}'.")
 
@@ -175,4 +174,3 @@ class AsyncioModbusClient:
             await self.client.close()  # type: ignore  # 3.0.x - 3.2.x
         else:  # 2.4.x - 2.5.x
             self.client.stop()  # type: ignore
-        self.open = False
