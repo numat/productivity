@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 try:
     import pymodbus
-    pymodbus.logging.pymodbus_apply_logging_config()
+    # pymodbus.logging.pymodbus_apply_logging_config()
     from pymodbus.client import AsyncModbusTcpClient  # 3.x
 except ImportError:  # 2.4.x - 2.5.x
     from pymodbus.client.asynchronous.async_io import ReconnectingAsyncioModbusTcpClient  # type: ignore
