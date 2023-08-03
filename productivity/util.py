@@ -156,14 +156,11 @@ class AsyncioModbusClient:
         """
         await self.connectTask # ensures the _connect Task triggered from _init is copmplete
         async with self.lock:
-            try:
-                if self.pymodbus32plus:
-                    future = getattr(self.client, method)
-                else:
-                    future = getattr(self.client.protocol, method)  # type: ignore
-                return await future(*args, **kwargs)
-            except (asyncio.TimeoutError, pymodbus.exceptions.ConnectionException):
-                raise TimeoutError("Not connected to PLC.")
+            if self.pymodbus32plus:
+                future = getattr(self.client, method)
+            else:
+                future = getattr(self.client.protocol, method)  # type: ignore
+            return await future(*args, **kwargs)
 
     async def _close(self) -> None:
         """Close the TCP connection."""
