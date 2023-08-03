@@ -51,7 +51,7 @@ class AsyncioModbusClient:
 
     def __init__(self, address, timeout=1):
         """Set up communication parameters."""
-        logging.debug("AsyncioModbusClient.init debug test")
+        logging.info("AsyncioModbusClient.init info test")
         logging.error("AsyncioModbusClient.init error test")
         self.ip = address
         self.timeout = timeout
@@ -77,11 +77,11 @@ class AsyncioModbusClient:
         self.pymodbus30plus = int(pymodbus.__version__[0]) == 3
         self.pymodbus32plus = self.pymodbus30plus and int(pymodbus.__version__[2]) >= 2
         self.pymodbus33plus = self.pymodbus30plus and int(pymodbus.__version__[2]) >= 3
-        logging.debug(f"pymodbus flags {self.pymodbus30plus} {self.pymodbus32plus} {self.pymodbus33plus}")
+        logging.info(f"pymodbus flags {self.pymodbus30plus} {self.pymodbus32plus} {self.pymodbus33plus}")
 
     async def _connect(self):
         """Start asynchronous reconnect loop."""
-        logging.debug("AsyncioModbusClient._connect")
+        logging.info("AsyncioModbusClient._connect")
         try:
             if self.pymodbus30plus:
                 await asyncio.wait_for(self.client.connect(), timeout=self.timeout)  # 3.x
@@ -171,7 +171,7 @@ class AsyncioModbusClient:
             return await future(*args, **kwargs)
 
     async def _close(self) -> None:
-        logging.debug("productivity.util _close")
+        logging.info("productivity.util _close")
         """Close the TCP connection."""
         if self.pymodbus33plus:
             self.client.close()  # 3.3.x
