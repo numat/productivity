@@ -5,15 +5,17 @@ Copyright (C) 2022 NuMat Technologies
 """
 import asyncio
 import logging
-logger = logging.getLogger('controller')
 
 try:
     import pymodbus
+
     # pymodbus.logging.pymodbus_apply_logging_config()
     from pymodbus.client import AsyncModbusTcpClient  # 3.x
 except ImportError:  # 2.4.x - 2.5.x
     from pymodbus.client.asynchronous.async_io import ReconnectingAsyncioModbusTcpClient  # type: ignore
 import pymodbus.exceptions
+
+logger = logging.getLogger('controller')
 
 TYPE_START = {
     'discrete_output': 0,
