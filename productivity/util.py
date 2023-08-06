@@ -8,7 +8,7 @@ import logging
 
 try:
     import pymodbus
-
+    pymodbus.logging.Log.apply_logging_config(logging.INFO, None)
     # pymodbus.logging.pymodbus_apply_logging_config()
     from pymodbus.client import AsyncModbusTcpClient  # 3.x
 except ImportError:  # 2.4.x - 2.5.x
