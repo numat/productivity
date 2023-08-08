@@ -4,18 +4,12 @@ Distributed under the GNU General Public License v2
 Copyright (C) 2022 NuMat Technologies
 """
 import asyncio
-import logging
 
 try:
-    import pymodbus
-    # pymodbus.logging.Log.apply_logging_config(logging.INFO, None)
-    pymodbus.logging.pymodbus_apply_logging_config()
     from pymodbus.client import AsyncModbusTcpClient  # 3.x
 except ImportError:  # 2.4.x - 2.5.x
     from pymodbus.client.asynchronous.async_io import ReconnectingAsyncioModbusTcpClient  # type: ignore
 import pymodbus.exceptions
-
-logger = logging.getLogger('controller')
 
 TYPE_START = {
     'discrete_output': 0,
@@ -53,8 +47,6 @@ class AsyncioModbusClient:
 
     def __init__(self, address, timeout=1):
         """Set up communication parameters."""
-        logger.info("AsyncioModbusClient.init info test")
-        logger.error("AsyncioModbusClient.init error test")
         self.ip = address
         self.timeout = timeout
         self._register_types = ['holding', 'input']
@@ -79,11 +71,9 @@ class AsyncioModbusClient:
         self.pymodbus30plus = int(pymodbus.__version__[0]) == 3
         self.pymodbus32plus = self.pymodbus30plus and int(pymodbus.__version__[2]) >= 2
         self.pymodbus33plus = self.pymodbus30plus and int(pymodbus.__version__[2]) >= 3
-        logger.info(f"pymodbus flags {self.pymodbus30plus} {self.pymodbus32plus} {self.pymodbus33plus}")
 
     async def _connect(self):
         """Start asynchronous reconnect loop."""
-        logger.info("AsyncioModbusClient._connect")
         try:
             if self.pymodbus30plus:
                 await asyncio.wait_for(self.client.connect(), timeout=self.timeout)  # 3.x
@@ -173,7 +163,6 @@ class AsyncioModbusClient:
             return await future(*args, **kwargs)
 
     async def _close(self) -> None:
-        logger.info("productivity.util _close")
         """Close the TCP connection."""
         if self.pymodbus33plus:
             self.client.close()  # 3.3.x
