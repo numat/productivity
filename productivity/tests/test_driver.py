@@ -113,3 +113,5 @@ async def test_type_checking(plc_driver):
         await plc_driver.set({'GAS-101': 1})
     with pytest.raises(ValueError, match='Expected TI-101 to be a int'):
         await plc_driver.set({'TI-101': 1.0})
+    with pytest.raises(ValueError, match='Expected FI-101 to be a float'):
+        await plc_driver.set({'FI-101': True})
