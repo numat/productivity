@@ -127,7 +127,7 @@ class ProductivityPLC(AsyncioModbusClient):
         for key, value in to_write.items():
             start_address = self.tags[key]['address']['start']
             data_type = self.tags[key]['type'].rstrip(digits)
-            if isinstance(value, int) and data_type == 'float':
+            if type(value) == int and data_type == 'float':
                 value = float(value)
             if type(value) != pydoc.locate(data_type):
                 raise ValueError(f"Expected {key} to be a {data_type}.")
