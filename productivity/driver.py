@@ -149,8 +149,10 @@ class ProductivityPLC(AsyncioModbusClient):
 
         """
         start_address = self.tags[key]['address']['start'] - 400001
-        builder = BinaryPayloadBuilder(byteorder=Endian.Big,
-                                       wordorder=Endian.Little)
+        bigendian = Endian.BIG if self.pymodbus35plus else Endian.Big  # type:ignore[attr-defined]
+        lilendian = Endian.LITTLE if self.pymodbus35plus else Endian.Little  # type:ignore
+        builder = BinaryPayloadBuilder(byteorder=bigendian,
+                                       wordorder=lilendian)
         data_type = self.tags[key]['type']
         if data_type == 'float':
             builder.add_32bit_float(float(value))
@@ -222,9 +224,11 @@ class ProductivityPLC(AsyncioModbusClient):
     async def _read_registers(self, a_type: str) -> dict:
         """Handle reading input or holding registers from the PLC."""
         r = await self.read_registers(**self.addresses[a_type], type=a_type)
+        bigendian = Endian.BIG if self.pymodbus35plus else Endian.Big  # type:ignore[attr-defined]
+        lilendian = Endian.LITTLE if self.pymodbus35plus else Endian.Little  # type:ignore
         decoder = BinaryPayloadDecoder.fromRegisters(r,
-                                                     byteorder=Endian.Big,
-                                                     wordorder=Endian.Little)
+                                                     byteorder=bigendian,
+                                                     wordorder=lilendian)
         current = self.addresses[a_type]['address'] + TYPE_START[a_type] + 1
         end = current + self.addresses[a_type]['count']
         result = {}
