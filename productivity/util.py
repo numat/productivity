@@ -75,14 +75,13 @@ class AsyncioModbusClient:
 
     async def _connect(self):
         """Start asynchronous reconnect loop."""
-        async with self.lock:
-            try:
-                if self.pymodbus30plus:
-                    await asyncio.wait_for(self.client.connect(), timeout=self.timeout)  # 3.x
-                else:  # 2.4.x - 2.5.x
-                    await self.client.start(self.ip)  # type: ignore
-            except Exception:
-                raise OSError(f"Could not connect to '{self.ip}'.")
+        try:
+            if self.pymodbus30plus:
+                await asyncio.wait_for(self.client.connect(), timeout=self.timeout)  # 3.x
+            else:  # 2.4.x - 2.5.x
+                await self.client.start(self.ip)  # type: ignore
+        except Exception:
+            raise OSError(f"Could not connect to '{self.ip}'.")
 
     async def read_coils(self, address, count):
         """Read modbus output coils (0 address prefix)."""
@@ -156,7 +155,7 @@ class AsyncioModbusClient:
         exist, other logic will have to be added to either prevent or manage
         race conditions.
         """
-        await self.connectTask
+        await self.connectTask  # ensure the _connect Task triggered from _init is complete
         async with self.lock:
             try:
                 if self.pymodbus32plus:
