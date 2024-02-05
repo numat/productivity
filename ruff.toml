@@ -1,5 +1,7 @@
+exclude = ["venv*"]
 line-length = 120
-ignore = [
+target-version = "py38"
+lint.ignore = [
     "PLR2004",
     "D104",
     "D107",
@@ -9,8 +11,7 @@ ignore = [
     "PT023",  # Use `@pytest.mark.asyncio()` over `@pytest.mark.asyncio`
     "SIM108",
 ]
-exclude = ["venv*"]
-select = [
+lint.select = [
     # "B",   # bandit
     "C",   # complexity
     "D",   # docstrings
@@ -25,6 +26,5 @@ select = [
     "YTT", # flake8-2020
     # "ARG", # flake8-unused args
 ]
-target-version = "py38"
-[pydocstyle]
+[lint.pydocstyle]
 convention = "pep257"
